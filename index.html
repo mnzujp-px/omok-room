@@ -833,6 +833,59 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     var SYSTEM="너는 한국어 문장 편집기다. 사용자가 보낸 문장의 뜻과 사실은 절대 바꾸지 말고, 말투만 정중하고 명확한 답변체(~해요, ~입니다)로 다듬어라. 내용이 여러 항목이면 마크다운 목록(- 항목)이나 굵은 글씨(**강조**)로 가볍게 정리하되, 짧은 문장은 서식 없이 한 문장으로 둔다. 없는 내용을 지어내지 마라. 설명이나 인사 없이 결과 문장만 출력하라.";
     function say(t){foot.textContent=t}
     function reset(){foot.textContent=DEFAULT}
+    function showResult(out,msg){
+      orig=ta.value; ta.value=out; ta.dispatchEvent(new Event("input",{bubbles:true})); ta.focus();
+      foot.textContent=msg+" ";
+      var undo=document.createElement("button"); undo.type="button"; undo.className="lnk"; undo.textContent="원래대로";
+      undo.onclick=function(){ta.value=orig;ta.dispatchEvent(new Event("input",{bubbles:true}));ta.focus();reset()};
+      foot.appendChild(undo);
+    }
+    /* 설정 없이 쓰는 기본 규칙: 반말을 정중한 말투로, 목록 기호를 마크다운으로 */
+    var ALONE=[[/^(ㅇㅇ|응|웅|엉|어|ㅇㅇㅇ)$/,"네."],[/^(ㅇㅋ|ㅇㅋㅇㅋ|오키|오케이|오키오키)$/,"알겠습니다."],[/^(ㄴㄴ|노노|아니|아냐)$/,"아니요."],[/^(ㄱㅅ|ㄳ|땡큐|고마워|고맙다)$/,"감사합니다."],[/^(ㅈㅅ|미안|미안해|ㅈㅅㅈㅅ)$/,"죄송합니다."],[/^(ㅎㅇ|하이|안녕)$/,"안녕하세요."],[/^(ㅂㅂ|바이|잘가)$/,"안녕히 계세요."],[/^(ㄱㄱ|고고)$/,"좋습니다. 진행하겠습니다."]];
+    var ENDS=[
+      [/해줄래\??$/,"해 주실 수 있을까요?"],[/해줄 수 있어\??$/,"해 주실 수 있을까요?"],[/해줄 수 있나\??$/,"해 주실 수 있을까요?"],
+      [/(해 ?줘|해 ?주라|해 ?줘라|해라)\.?$/,"해 주세요."],
+      [/(알겠|알았)(음|어|다|엉)\.?$/,"알겠습니다."],
+      [/해야 ?(돼|해|함)\.?$/,"해야 해요."],[/할 수 있어\.?$/,"할 수 있어요."],[/할 수 없어\.?$/,"할 수 없어요."],
+      [/할게\.?$/,"할게요."],[/할까\?$/,"할까요?"],
+      [/어때\??$/,"어떠세요?"],[/뭐해\??$/,"무엇을 하고 계세요?"],[/가능\?$/,"가능할까요?"],[/언제\?$/,"언제쯤 가능할까요?"],[/왜\?$/,"이유가 무엇인가요?"],
+      [/(고마워|고맙다|땡큐)\.?$/,"감사합니다."],[/(미안해|미안하다|미안)\.?$/,"죄송합니다."],
+      [/(좋아|괜찮아|맞아|몰라|그래|싫어|그렇지|괜찮지)\.?$/,function(m,w){return w+"요."}],
+      [/([았었했겠])다\.?$/,function(m,w){return w+"습니다."}],
+      [/([았었했겠])(어|음|엉)\?$/,function(m,w){return w+"나요?"}],
+      [/([았었했겠])(어|음|엉)\.?$/,function(m,w){return w+"어요."}],
+      [/(있|없)(어|음)\?$/,function(m,w){return w+"나요?"}],
+      [/있음\.?$/,"있습니다."],[/없음\.?$/,"없습니다."],[/(있|없)어\.?$/,function(m,w){return w+"어요."}],
+      [/(필요|가능|불가능|충분|중요|정확|적당)함\.?$/,function(m,w){return w+"합니다."}],
+      [/듯\.?$/,"듯해요."],
+      [/([가-힣])(어|음|엉)\?$/,function(m,w,e){return ((w.charCodeAt(0)-44032)%28===20)?w+"나요?":m}],
+      [/([가-힣])(어|음|엉)\.?$/,function(m,w){return ((w.charCodeAt(0)-44032)%28===20)?w+"어요.":m}],
+      [/됨\.?$/,"되었습니다."],[/함\.?$/,"했습니다."],[/임\.?$/,"입니다."]
+    ];
+    function polishLine(l){
+      var t=l.trim(); if(!t)return l;
+      var lm=t.match(/^\s*([-•·*]|\d+[.)])\s+(.*)$/), pre="";
+      if(lm){pre=/\d/.test(lm[1])?lm[1].replace(")",".")+" ":"- "; t=lm[2]}
+      t=t.replace(/[ㅋㅎ]{2,}|[~]+$|[ㅠㅜ]{2,}/g,"").replace(/\s+/g," ").trim();
+      for(var i=0;i<ALONE.length;i++)if(ALONE[i][0].test(t))return pre+ALONE[i][1];
+      for(var j=0;j<ENDS.length;j++){
+        if(ENDS[j][0].test(t)){t=t.replace(ENDS[j][0],ENDS[j][1]);break}
+      }
+      if(!/[.?!…]$/.test(t)&&/(요|다|니다|까|죠)$/.test(t))t+=/(까|죠)$/.test(t)?"?":".";
+      return pre+t;
+    }
+    function polishRules(text){return text.split("\n").map(polishLine).join("\n")}
+    function finishRules(text){
+      var out=polishRules(text);
+      if(out===text){say("바꿀 부분을 찾지 못했어요. 그대로 보내도 괜찮아요.");return}
+      showResult(out,"기본 규칙으로 다듬었어요. 보내기 전에 확인하세요.");
+    }
+    function withTimeout(p,ms){
+      return new Promise(function(res,rej){
+        var t=setTimeout(function(){rej(new Error("timeout"))},ms);
+        p.then(function(v){clearTimeout(t);res(v)},function(e){clearTimeout(t);rej(e)});
+      });
+    }
     function api(){return self.LanguageModel||(self.ai&&self.ai.languageModel)||null}
     function clean(t){return String(t||"").replace(/^```[a-z]*\n?/i,"").replace(/\n?```\s*$/,"").trim()}
     btn.addEventListener("click",async function(){
@@ -840,7 +893,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       var text=ta.value.trim();
       if(!text){say("먼저 다듬을 문장을 입력해 주세요.");return}
       var LM=api();
-      if(!LM){say("이 브라우저에서는 AI 다듬기를 쓸 수 없어요. 최신 데스크톱 Chrome에서 사용할 수 있어요.");return}
+      if(!LM){finishRules(text);return}
       busy=true; btn.classList.add("busy"); say("AI가 다듬는 중…");
       var session=null;
       try{
@@ -852,24 +905,20 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
             try{lastAv=await LM.availability(tries[k])}catch(e0){lastAv="error"}
             if(lastAv&&lastAv!=="unavailable"&&lastAv!=="no"&&lastAv!=="error")choice=tries[k];
           }
-          if(!choice){say("이 컴퓨터에서는 크롬 내장 AI를 쓸 수 없어요. (상태: "+lastAv+") 설정은 안내를 확인하세요.");return}
+          if(!choice||lastAv!=="available"){finishRules(text);return}
         }else choice={};
         var opts={
           initialPrompts:[{role:"system",content:SYSTEM}],
           monitor:function(m){m.addEventListener("downloadprogress",function(e){say("AI 모델을 내려받는 중 "+Math.round(e.loaded*100)+"%")})}
         };
         if(choice.expectedInputs){opts.expectedInputs=choice.expectedInputs;opts.expectedOutputs=choice.expectedOutputs}
-        try{session=await LM.create(opts)}
-        catch(e1){session=await LM.create({systemPrompt:SYSTEM})}
-        var out=clean(await session.prompt("다음 문장을 다듬어라:\n\n"+text));
+        try{session=await withTimeout(LM.create(opts),90000)}
+        catch(e1){if(e1&&e1.message==='timeout')throw e1;session=await withTimeout(LM.create({systemPrompt:SYSTEM}),90000)}
+        var out=clean(await withTimeout(session.prompt("다음 문장을 다듬어라:\n\n"+text),25000));
         if(!out){say("결과가 비어 있어요. 다시 시도해 주세요.");return}
-        orig=ta.value; ta.value=out; ta.dispatchEvent(new Event("input",{bubbles:true})); ta.focus();
-        foot.textContent="AI가 다듬었어요. 보내기 전에 확인하세요.";
-        var undo=document.createElement("button"); undo.type="button"; undo.className="lnk"; undo.textContent="원래대로";
-        undo.onclick=function(){ta.value=orig;ta.dispatchEvent(new Event("input",{bubbles:true}));ta.focus();reset()};
-        foot.appendChild(undo);
+        showResult(out,"AI가 다듬었어요. 보내기 전에 확인하세요.");
       }catch(e){
-        say("AI 다듬기에 실패했어요. 잠시 뒤 다시 시도해 주세요.");
+        say("AI 응답이 늦어 기본 규칙으로 다듬었어요.");finishRules(text);
       }finally{
         try{if(session&&session.destroy)session.destroy()}catch(e){}
         busy=false; btn.classList.remove("busy");
