@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko" class="dark">
+<html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,13 +9,13 @@
 <style>
 /* Plus X Vanilla 토큰. 다크 단일, 라운드 0, 카드는 shadow, 강조는 시안 1~2곳. */
 :root{
-  color-scheme:dark;
-  --background:#0a0a0a; --foreground:#f0f0f0;
-  --primary:#f0f0f0; --primary-foreground:#0a0a0a;
-  --muted:#1a1a1a; --muted-foreground:#7a7a7a; --accent:#1a1a1a; --card:#141414;
-  --border:rgba(255,255,255,0.08); --input:rgba(255,255,255,0.08); --ring:#f0f0f0;
-  --destructive:#ef4444; --chart-1:#00d2ff; --chart-4:#22c55e;
-  --glow:rgba(255,255,255,0.15);
+  color-scheme:light;
+  --background:#ffffff; --foreground:#0d0d0d;
+  --primary:#0d0d0d; --primary-foreground:#ffffff;
+  --muted:#f4f4f4; --muted-foreground:#6b6b6b; --accent:#ececec; --card:#f9f9f9;
+  --border:rgba(0,0,0,0.08); --input:rgba(0,0,0,0.12); --ring:#0d0d0d;
+  --destructive:#ef4444; --chart-1:#2563eb; --chart-4:#22c55e;
+  --glow:rgba(37,99,235,0.25);
   --shadow-1:0 1px 2px rgba(0,0,0,0.05);
   --shadow-glow:0 0 24px var(--glow);
   --space-2:2px;--space-4:4px;--space-8:8px;--space-12:12px;--space-16:16px;--space-20:20px;--space-24:24px;
@@ -53,6 +53,11 @@ button{cursor:pointer}
 @media (min-width:1024px){.side{display:flex}}
 .side__item{padding:var(--space-8) var(--space-12);color:var(--muted-foreground);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .side__item--active{background:var(--accent);color:var(--foreground)}
+.side__title{font-size:18px;line-height:26px;font-weight:600;padding:var(--space-8) var(--space-12) var(--space-12)}
+.side__item{color:var(--foreground)}
+.side__label{color:var(--muted-foreground)}
+.pagetitle{font-weight:500;margin-right:auto}
+.footnote{text-align:center}
 .side__label{padding:var(--space-16) var(--space-12) var(--space-4)}
 .chatcol{min-height:0;min-width:0;display:flex;flex-direction:column;gap:var(--space-16);padding:var(--space-16)}
 @media (min-width:768px){.chatcol{padding:var(--space-16) var(--space-24)}}
@@ -66,7 +71,7 @@ button{cursor:pointer}
 .msg.me{align-self:flex-end;align-items:flex-end;max-width:84%}
 .bub{padding:0;overflow-wrap:anywhere;white-space:pre-wrap}
 .msg.me .bub{background:var(--muted);padding:var(--space-8) var(--space-16)}
-.composer{background:var(--muted);padding:var(--space-8);display:flex;gap:var(--space-8);align-items:center}
+.composer{background:var(--background);box-shadow:inset 0 0 0 1px var(--input),var(--shadow-1);padding:var(--space-8) var(--space-8) var(--space-8) var(--space-16);display:flex;gap:var(--space-8);align-items:center}
 .composer .input{border:0;height:40px}
 .btn--icon{width:40px;height:40px;padding:0}
 .empty{margin:auto;text-align:center;color:var(--muted-foreground);padding:var(--space-24)}
@@ -78,7 +83,7 @@ button{cursor:pointer}
 .chip.b{background:var(--foreground)}
 .chip.w{box-shadow:inset 0 0 0 2px var(--foreground)}
 #boardwrap{flex:1;min-height:0;display:flex;justify-content:center;align-items:center}
-#board{width:min(100%,calc(100vh - 200px),720px);min-width:280px;aspect-ratio:1;display:grid;grid-template-columns:repeat(15,1fr);background:var(--muted)}
+#board{width:min(100%,calc(100vh - 200px),720px);min-width:280px;aspect-ratio:1;display:grid;grid-template-columns:repeat(15,1fr);background:var(--accent)}
 .c{position:relative;border:0;background:none;padding:0;min-width:0;min-height:0}
 .c::before,.c::after{content:"";position:absolute;background:color-mix(in srgb,var(--muted-foreground) 40%,transparent)}
 .c::before{left:0;right:0;top:50%;height:1px}
@@ -86,7 +91,7 @@ button{cursor:pointer}
 .c.top::after{top:50%}.c.bot::after{bottom:50%}.c.lft::before{left:50%}.c.rgt::before{right:50%}
 .c .s{position:absolute;inset:18%;z-index:1}
 .c .s.b{background:var(--foreground)}
-.c .s.w{background:var(--muted);box-shadow:inset 0 0 0 2px var(--foreground)}
+.c .s.w{background:var(--accent);box-shadow:inset 0 0 0 2px var(--foreground)}
 .c .s.last{outline:2px solid var(--chart-1);outline-offset:1px}
 .c .s.win{box-shadow:var(--shadow-glow);outline:2px solid var(--chart-1);outline-offset:1px}
 .ghost{position:absolute;inset:30%;background:var(--foreground);opacity:0;z-index:1}
@@ -103,19 +108,25 @@ button{cursor:pointer}
 <body>
 <div class="app">
   <nav class="side" aria-label="대화 목록">
+    <div class="side__title">업무 도우미</div>
     <div class="side__item side__item--active">새 채팅</div>
+    <div class="side__label caption">고정된 스레드</div>
+    <div class="side__item">회의록 요약본</div>
+    <div class="side__item">광고 집행 일정</div>
+    <div class="side__item">외주 견적 비교</div>
     <div class="side__label caption">최근</div>
     <div class="side__item">4분기 운영 현황 정리</div>
-    <div class="side__item">광고 집행 일정 검토</div>
-    <div class="side__item">외주 견적 비교표</div>
-    <div class="side__item">주간회의 메모 요약</div>
+    <div class="side__item">주간회의 내용 정리</div>
     <div class="side__item">제작 일정 확인</div>
+    <div class="side__item">예외 처리 기준 문구</div>
+    <div class="side__item">업무 처리 사전 안내</div>
   </nav>
 
   <main class="chatcol">
     <header class="row">
+      <span class="pagetitle">전체 사용 현황</span>
       <span class="caption" id="conn" role="status">연결 중</span>
-      <button class="btn btn--outline btn--xs" id="copy" type="button" style="margin-left:auto">링크 복사</button>
+      <button class="btn btn--outline btn--xs" id="copy" type="button">링크 복사</button>
       <button class="btn btn--outline btn--xs" id="me" type="button">이름 정하기</button>
       <button class="btn btn--ghost btn--xs" id="hide" type="button" title="Esc 키로도 됩니다">숨기기 (Esc)</button>
       <button class="btn btn--outline btn--xs" id="togglecanvas" type="button">캔버스 열기</button>
@@ -127,9 +138,10 @@ button{cursor:pointer}
       </form>
       <div id="log" aria-live="polite"></div>
       <form class="composer" id="composer">
-        <input class="input" type="text" id="text" maxlength="500" placeholder="메시지를 입력하세요" aria-label="메시지" autocomplete="off">
+        <input class="input" type="text" id="text" maxlength="500" placeholder="무엇이든 물어보세요" aria-label="메시지" autocomplete="off">
         <button class="btn btn--icon" type="submit" aria-label="보내기">↑</button>
       </form>
+      <p class="caption footnote">실수할 수 있습니다. 중요한 정보는 확인하세요.</p>
     </div>
   </main>
 
