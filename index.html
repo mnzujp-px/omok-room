@@ -25,7 +25,7 @@
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0ms!important;animation-duration:0ms!important}}
 *{box-sizing:border-box;border-radius:0}
 html,body{height:100%;margin:0}
-body{background:var(--background);color:var(--foreground);font-family:var(--font-sans);font-size:14px;line-height:22px;-webkit-font-smoothing:antialiased;padding:var(--space-16)}
+body{background:var(--background);color:var(--foreground);font-family:var(--font-sans);font-size:14px;line-height:22px;-webkit-font-smoothing:antialiased;padding:0}
 h2{margin:0}
 button,input{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -46,15 +46,29 @@ button{cursor:pointer}
 .card{background:var(--card);box-shadow:var(--shadow-1);padding:var(--space-16)}
 @media (min-width:768px){.card{padding:var(--space-24)}}
 .card--fill{flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--space-16)}
-.layout{flex:1;min-height:0;display:grid;grid-template-columns:1fr;gap:var(--space-24)}
-@media (min-width:1024px){.layout{grid-template-columns:minmax(0,1fr) 380px}}
-.pane{min-height:0;display:flex;flex-direction:column;gap:var(--space-16)}
+/* 3단: 사이드바 / 대화 / 캔버스 */
+.app{height:100%;display:grid;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1024px){.app{grid-template-columns:240px minmax(0,1fr) minmax(0,560px)}}
+.side{display:none;background:var(--card);padding:var(--space-16);flex-direction:column;gap:var(--space-4);min-height:0}
+@media (min-width:1024px){.side{display:flex}}
+.side__item{padding:var(--space-8) var(--space-12);color:var(--muted-foreground);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side__item--active{background:var(--accent);color:var(--foreground)}
+.side__label{padding:var(--space-16) var(--space-12) var(--space-4)}
+.chatcol{min-height:0;min-width:0;display:flex;flex-direction:column;gap:var(--space-16);padding:var(--space-16)}
+@media (min-width:768px){.chatcol{padding:var(--space-16) var(--space-24)}}
+.chatwrap{flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--space-16);width:100%;max-width:720px;margin:0 auto}
+.canvas{display:none;background:var(--card);padding:var(--space-24);min-height:0;flex-direction:column;gap:var(--space-16)}
+@media (min-width:1024px){.canvas{display:flex}}
+.canvas--open{display:flex}
 .h4{font-size:18px;line-height:26px;font-weight:600;letter-spacing:-0.015em}
-#log{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:var(--space-12)}
-.msg{max-width:84%;display:flex;flex-direction:column;gap:var(--space-2);align-self:flex-start}
-.msg.me{align-self:flex-end;align-items:flex-end}
-.bub{background:var(--muted);padding:var(--space-8) var(--space-12);overflow-wrap:anywhere;white-space:pre-wrap}
-.msg.me .bub{background:var(--primary);color:var(--primary-foreground)}
+#log{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:var(--space-24)}
+.msg{max-width:100%;display:flex;flex-direction:column;gap:var(--space-2);align-self:flex-start}
+.msg.me{align-self:flex-end;align-items:flex-end;max-width:84%}
+.bub{padding:0;overflow-wrap:anywhere;white-space:pre-wrap}
+.msg.me .bub{background:var(--muted);padding:var(--space-8) var(--space-16)}
+.composer{background:var(--muted);padding:var(--space-8);display:flex;gap:var(--space-8);align-items:center}
+.composer .input{border:0;height:40px}
+.btn--icon{width:40px;height:40px;padding:0}
 .empty{margin:auto;text-align:center;color:var(--muted-foreground);padding:var(--space-24)}
 .empty__title{color:var(--foreground);font-weight:600;font-size:18px;line-height:26px;margin:0 0 var(--space-4)}
 .empty p{margin:0}
@@ -64,7 +78,7 @@ button{cursor:pointer}
 .chip.b{background:var(--foreground)}
 .chip.w{box-shadow:inset 0 0 0 2px var(--foreground)}
 #boardwrap{flex:1;min-height:0;display:flex;justify-content:center;align-items:center}
-#board{width:min(100%,calc(100vh - 280px),720px);min-width:280px;aspect-ratio:1;display:grid;grid-template-columns:repeat(15,1fr);background:var(--muted)}
+#board{width:min(100%,calc(100vh - 200px),720px);min-width:280px;aspect-ratio:1;display:grid;grid-template-columns:repeat(15,1fr);background:var(--muted)}
 .c{position:relative;border:0;background:none;padding:0;min-width:0;min-height:0}
 .c::before,.c::after{content:"";position:absolute;background:color-mix(in srgb,var(--muted-foreground) 40%,transparent)}
 .c::before{left:0;right:0;top:50%;height:1px}
@@ -87,45 +101,50 @@ button{cursor:pointer}
 </style>
 </head>
 <body>
-<main class="container">
-  <header class="row">
-    <span class="caption" id="conn" role="status">연결 중</span>
-    <button class="btn btn--outline btn--xs" id="copy" type="button" style="margin-left:auto">링크 복사</button>
-    <button class="btn btn--outline btn--xs" id="me" type="button">이름 정하기</button>
-    <button class="btn btn--ghost btn--xs" id="hide" type="button" title="Esc 키로도 됩니다">숨기기 (Esc)</button>
-  </header>
+<div class="app">
+  <nav class="side" aria-label="대화 목록">
+    <div class="side__item side__item--active">새 채팅</div>
+    <div class="side__label caption">최근</div>
+    <div class="side__item">4분기 운영 현황 정리</div>
+    <div class="side__item">광고 집행 일정 검토</div>
+    <div class="side__item">외주 견적 비교표</div>
+    <div class="side__item">주간회의 메모 요약</div>
+    <div class="side__item">제작 일정 확인</div>
+  </nav>
 
-  <div class="layout">
-    <section class="pane" aria-labelledby="h-game">
-      <div class="card card--fill">
-        <div class="row">
-          <h2 class="h4" id="h-game" style="margin-right:auto">오목</h2>
-          <div class="row" id="seats"></div>
-        </div>
-        <div id="boardwrap"><div id="board"></div></div>
-        <div class="row">
-          <span class="text-muted" id="gamestatus"></span>
-          <button class="btn btn--outline btn--xs" id="reset" type="button" style="margin-left:auto">새 판</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="pane" aria-labelledby="h-chat" style="min-height:420px">
+  <main class="chatcol">
+    <header class="row">
+      <span class="caption" id="conn" role="status">연결 중</span>
+      <button class="btn btn--outline btn--xs" id="copy" type="button" style="margin-left:auto">링크 복사</button>
+      <button class="btn btn--outline btn--xs" id="me" type="button">이름 정하기</button>
+      <button class="btn btn--ghost btn--xs" id="hide" type="button" title="Esc 키로도 됩니다">숨기기 (Esc)</button>
+      <button class="btn btn--outline btn--xs" id="togglecanvas" type="button">캔버스 열기</button>
+    </header>
+    <div class="chatwrap">
       <form class="row" id="nickbar" hidden>
         <input class="input" type="text" id="nick" maxlength="12" placeholder="사용할 이름" aria-label="사용할 이름" autocomplete="off">
         <button class="btn btn--outline" type="submit">저장</button>
       </form>
-      <div class="card card--fill">
-        <h2 class="h4" id="h-chat">채팅</h2>
-        <div id="log" aria-live="polite"></div>
-        <form class="row" id="composer" style="flex-wrap:nowrap">
-          <input class="input" type="text" id="text" maxlength="500" placeholder="메시지 입력 후 Enter" aria-label="메시지" autocomplete="off">
-          <button class="btn" type="submit">보내기</button>
-        </form>
-      </div>
-    </section>
-  </div>
-</main>
+      <div id="log" aria-live="polite"></div>
+      <form class="composer" id="composer">
+        <input class="input" type="text" id="text" maxlength="500" placeholder="메시지를 입력하세요" aria-label="메시지" autocomplete="off">
+        <button class="btn btn--icon" type="submit" aria-label="보내기">↑</button>
+      </form>
+    </div>
+  </main>
+
+  <aside class="canvas" id="canvas" aria-labelledby="h-game">
+    <div class="row">
+      <h2 class="h4" id="h-game" style="margin-right:auto">캔버스</h2>
+      <div class="row" id="seats"></div>
+    </div>
+    <div id="boardwrap"><div id="board"></div></div>
+    <div class="row">
+      <span class="text-muted" id="gamestatus"></span>
+      <button class="btn btn--outline btn--xs" id="reset" type="button" style="margin-left:auto">새로 시작</button>
+    </div>
+  </aside>
+</div>
 
 <div id="boss" hidden>
   <div class="bar">2026 4분기 운영 현황.xlsx</div>
@@ -286,6 +305,7 @@ button{cursor:pointer}
     b.setAttribute("aria-label",(r+1)+"행 "+(c+1)+"열"); b.dataset.i=i; cellEls.push(b); board.appendChild(b);
   }
   board.addEventListener("click",function(e){var el=e.target.closest(".c");if(el)send({t:"move",i:+el.dataset.i})});
+  $("togglecanvas").onclick=function(){var c=$("canvas").classList.toggle("canvas--open");$("togglecanvas").textContent=c?"캔버스 닫기":"캔버스 열기"};
   $("reset").onclick=function(){send({t:"reset"})};
   function mySide(){
     var g=S.game;
