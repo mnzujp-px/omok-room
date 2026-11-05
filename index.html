@@ -189,13 +189,26 @@ button{cursor:pointer}
 .seg input:checked+span{background:var(--primary);color:var(--primary-foreground)}
 .seg input:focus-visible+span{outline:2px solid var(--ring);outline-offset:2px}
 .input--textarea{display:block;width:100%;height:auto;min-height:96px;padding:var(--space-12);resize:vertical;line-height:22px}
+.side__head{display:flex;align-items:center;justify-content:space-between}
+.side__head .side__title{padding-bottom:var(--space-8)}
+#opensidebar{display:none}
+.app.canvas-open #togglecanvas{display:none}
+@media (min-width:1024px){
+  .app.side-closed{grid-template-columns:minmax(0,1fr)}
+  .app.side-closed.canvas-open{grid-template-columns:minmax(0,1fr) var(--cw,560px)}
+  .app.side-closed .side{display:none}
+  .app.side-closed #opensidebar{display:inline-flex}
+}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
 <div class="app">
   <nav class="side" aria-label="대화 목록">
-    <div class="side__title">ChatGPT</div>
+    <div class="side__head">
+      <div class="side__title">ChatGPT</div>
+      <button class="btn btn--ghost iconbtn" id="closesidebar" type="button" aria-label="사이드바 닫기" title="사이드바 닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="5"/><path d="M9.5 4v16"/></svg></button>
+    </div>
     <div class="side__item side__item--active">새 채팅</div>
     <div class="side__label caption">고정된 스레드</div>
     <div class="side__item">회의록 요약본</div>
@@ -220,6 +233,7 @@ button{cursor:pointer}
 
   <main class="chatcol">
     <header class="row">
+      <button class="btn btn--ghost iconbtn" id="opensidebar" type="button" aria-label="사이드바 열기" title="사이드바 열기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="5"/><path d="M9.5 4v16"/></svg></button>
       <span class="pagetitle">전체 사용 현황</span>
       <span class="caption" id="conn" role="status">연결 중</span>
       <button class="btn btn--outline btn--xs" id="copy" type="button">링크 복사</button>
@@ -553,6 +567,13 @@ button{cursor:pointer}
     });
   })();
   var appEl=document.querySelector(".app");
+  function setSide(closed){
+    appEl.classList.toggle("side-closed",closed);
+    try{localStorage.setItem("br-side",closed?"1":"0")}catch(e){}
+  }
+  (function(){var v=null;try{v=localStorage.getItem("br-side")}catch(e){}setSide(v==="1")})();
+  $("closesidebar").onclick=function(){setSide(true)};
+  $("opensidebar").onclick=function(){setSide(false)};
   function setCanvas(open){
     appEl.classList.toggle("canvas-open",open);
     document.querySelectorAll(".tcv").forEach(function(b){b.setAttribute("aria-pressed",open)});
