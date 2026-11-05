@@ -278,6 +278,10 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .chips::-webkit-scrollbar{display:none}
 .chipb{flex:none;height:32px;padding:0 var(--space-12);border:0;border-radius:var(--radius-full);background:transparent;color:var(--muted-foreground);box-shadow:inset 0 0 0 1px var(--input);font:inherit;font-size:13px;letter-spacing:inherit;cursor:pointer;transition:all var(--duration-quick) ease-out}
 .chipb:hover{background:var(--accent);color:var(--foreground)}
+.aibtn{align-self:flex-end;margin-bottom:var(--space-2)}
+.aibtn.busy{opacity:.5;pointer-events:none}
+.composer{padding-left:var(--space-12)}
+.footnote .lnk{background:none;border:0;padding:0;margin-left:var(--space-4);font:inherit;color:var(--chart-1);cursor:pointer;text-decoration:underline}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -329,10 +333,11 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       <div id="log" aria-live="polite"></div>
       <div class="chips" role="toolbar" aria-label="마크다운 서식"><button class="chipb" type="button" data-md="bold">굵게</button><button class="chipb" type="button" data-md="italic">기울임</button><button class="chipb" type="button" data-md="strike">취소선</button><button class="chipb" type="button" data-md="code">코드</button><button class="chipb" type="button" data-md="link">링크</button><button class="chipb" type="button" data-md="h">제목</button><button class="chipb" type="button" data-md="ul">목록</button><button class="chipb" type="button" data-md="ol">번호</button><button class="chipb" type="button" data-md="task">체크</button><button class="chipb" type="button" data-md="quote">인용</button><button class="chipb" type="button" data-md="block">코드 블록</button><button class="chipb" type="button" data-md="table">표</button><button class="chipb" type="button" data-md="hr">구분선</button></div>
       <form class="composer" id="composer">
+        <button class="btn btn--ghost iconbtn aibtn" id="aibtn" type="button" aria-label="AI로 말투 다듬기" title="AI로 말투 다듬기 (정중한 말투 + 서식)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg></button>
         <textarea class="input" id="text" rows="1" maxlength="1000" placeholder="무엇이든 물어보세요" aria-label="메시지 (Shift+Enter로 줄바꿈)"></textarea>
         <button class="btn btn--icon" type="submit" aria-label="보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg></button>
       </form>
-      <p class="caption footnote">실수할 수 있습니다. 중요한 정보는 확인하세요.</p>
+      <p class="caption footnote" id="foot" aria-live="polite">실수할 수 있습니다. 중요한 정보는 확인하세요.</p>
     </div>
   </main>
 
@@ -814,6 +819,49 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     bar.addEventListener("mousedown",function(e){if(e.target.closest(".chipb"))e.preventDefault()});
     bar.addEventListener("click",function(e){
       var b=e.target.closest(".chipb"); if(b&&act[b.dataset.md])act[b.dataset.md]();
+    });
+  })();
+  /* AI로 말투 다듬기: 크롬에 내장된 온디바이스 AI(Prompt API)를 쓴다. 문장은 밖으로 나가지 않는다 */
+  (function(){
+    var btn=$("aibtn"), ta=$("text"), foot=$("foot"), DEFAULT=foot.textContent, busy=false, orig="";
+    var SYSTEM="너는 한국어 문장 편집기다. 사용자가 보낸 문장의 뜻과 사실은 절대 바꾸지 말고, 말투만 정중하고 명확한 답변체(~해요, ~입니다)로 다듬어라. 내용이 여러 항목이면 마크다운 목록(- 항목)이나 굵은 글씨(**강조**)로 가볍게 정리하되, 짧은 문장은 서식 없이 한 문장으로 둔다. 없는 내용을 지어내지 마라. 설명이나 인사 없이 결과 문장만 출력하라.";
+    function say(t){foot.textContent=t}
+    function reset(){foot.textContent=DEFAULT}
+    function api(){return self.LanguageModel||(self.ai&&self.ai.languageModel)||null}
+    function clean(t){return String(t||"").replace(/^```[a-z]*\n?/i,"").replace(/\n?```\s*$/,"").trim()}
+    btn.addEventListener("click",async function(){
+      if(busy)return;
+      var text=ta.value.trim();
+      if(!text){say("먼저 다듬을 문장을 입력해 주세요.");return}
+      var LM=api();
+      if(!LM){say("이 브라우저에서는 AI 다듬기를 쓸 수 없어요. 최신 데스크톱 Chrome에서 사용할 수 있어요.");return}
+      busy=true; btn.classList.add("busy"); say("AI가 다듬는 중…");
+      var session=null;
+      try{
+        if(LM.availability){
+          var av=await LM.availability({expectedInputs:[{type:"text",languages:["ko"]}],expectedOutputs:[{type:"text",languages:["ko"]}]});
+          if(av==="unavailable"){say("이 컴퓨터에서는 크롬 내장 AI를 쓸 수 없어요.");return}
+        }
+        var opts={
+          expectedInputs:[{type:"text",languages:["ko"]}],expectedOutputs:[{type:"text",languages:["ko"]}],
+          initialPrompts:[{role:"system",content:SYSTEM}],
+          monitor:function(m){m.addEventListener("downloadprogress",function(e){say("AI 모델을 내려받는 중 "+Math.round(e.loaded*100)+"%")})}
+        };
+        try{session=await LM.create(opts)}
+        catch(e1){session=await LM.create({systemPrompt:SYSTEM})}
+        var out=clean(await session.prompt("다음 문장을 다듬어라:\n\n"+text));
+        if(!out){say("결과가 비어 있어요. 다시 시도해 주세요.");return}
+        orig=ta.value; ta.value=out; ta.dispatchEvent(new Event("input",{bubbles:true})); ta.focus();
+        foot.textContent="AI가 다듬었어요. 보내기 전에 확인하세요.";
+        var undo=document.createElement("button"); undo.type="button"; undo.className="lnk"; undo.textContent="원래대로";
+        undo.onclick=function(){ta.value=orig;ta.dispatchEvent(new Event("input",{bubbles:true}));ta.focus();reset()};
+        foot.appendChild(undo);
+      }catch(e){
+        say("AI 다듬기에 실패했어요. 잠시 뒤 다시 시도해 주세요.");
+      }finally{
+        try{if(session&&session.destroy)session.destroy()}catch(e){}
+        busy=false; btn.classList.remove("busy");
+      }
     });
   })();
   $("composer").onsubmit=function(e){
