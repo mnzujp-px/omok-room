@@ -816,6 +816,12 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       hr:function(){block("---")}
     };
     var bar=document.querySelector(".chips");
+    bar.addEventListener("wheel",function(e){
+      if(bar.scrollWidth<=bar.clientWidth)return;
+      var d=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;
+      if(!d)return;
+      bar.scrollLeft+=d; e.preventDefault();
+    },{passive:false});
     bar.addEventListener("mousedown",function(e){if(e.target.closest(".chipb"))e.preventDefault()});
     bar.addEventListener("click",function(e){
       var b=e.target.closest(".chipb"); if(b&&act[b.dataset.md])act[b.dataset.md]();
