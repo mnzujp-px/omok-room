@@ -242,6 +242,10 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .btop{display:flex;align-items:center;gap:var(--space-8);flex-wrap:wrap;min-height:32px}
 .btop .text-muted{font-size:13px}
 .opctl #seats{opacity:var(--cv,1)}
+.msg:not(.me){align-self:stretch;max-width:100%}
+.msg:not(.me) .who{color:var(--muted-foreground);font-size:14px;line-height:22px;padding-bottom:var(--space-8);margin-bottom:var(--space-8);border-bottom:1px solid var(--border)}
+.msg:not(.me) .bub{font-size:15px;line-height:26px}
+.msg .bub strong{font-weight:700}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -409,7 +413,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     var g=S.game;
     if(m.t==="chat"){
       var txt=String(m.text||"").slice(0,500).trim(); if(!txt)return;
-      S.chat.push({uid:from,name:String(m.name||"익명").slice(0,12),text:txt});
+      S.chat.push({uid:from,name:String(m.name||"익명").slice(0,12),text:txt,ts:Date.now()});
       if(S.chat.length>200)S.chat.shift();
     }else if(m.t==="claim"){
       var key=m.side==="b"?"black":"white", other=m.side==="b"?"white":"black";
@@ -584,8 +588,17 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     if(!S.chat.length){log.appendChild(emptyBox("아직 대화가 없습니다","먼저 한마디 남겨보세요."));return}
     S.chat.forEach(function(m){
       var w=document.createElement("div"); w.className="msg"+(m.uid===myId?" me":"");
-      if(m.uid!==myId){var who=document.createElement("div");who.className="caption";who.textContent=m.name;w.appendChild(who)}
-      var b=document.createElement("div"); b.className="bub"; b.textContent=m.text; w.appendChild(b); log.appendChild(w);
+      if(m.uid!==myId){
+        var who=document.createElement("div"); who.className="who";
+        var tm=m.ts?new Date(m.ts).toLocaleTimeString("ko-KR",{hour:"numeric",minute:"2-digit"}):"";
+        who.textContent=m.name+(tm?" · "+tm:""); w.appendChild(who);
+      }
+      var b=document.createElement("div"); b.className="bub";
+      m.text.split(/(\*\*[^*]+\*\*)/).forEach(function(part){
+        if(/^\*\*[^*]+\*\*$/.test(part)){var st=document.createElement("strong");st.textContent=part.slice(2,-2);b.appendChild(st)}
+        else if(part)b.appendChild(document.createTextNode(part));
+      });
+      w.appendChild(b); log.appendChild(w);
     });
     log.scrollTop=log.scrollHeight;
   }
