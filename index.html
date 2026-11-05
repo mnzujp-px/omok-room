@@ -373,7 +373,7 @@ button{cursor:pointer}
     var box=$("people"); box.textContent="";
     Object.keys(S.people||{}).forEach(function(id){
       if(id===myId)return;
-      var p=S.people[id], label=p.away?"다른 창 보는 중":p.status;
+      var p=S.people[id], label=p.away?p.status+" · 다른 창 보는 중":p.status;
       var color=p.away||p.status==="자리 비움"?"var(--muted-foreground)":p.status==="대화 가능"?"var(--chart-4)":p.status==="회의 중"?"var(--destructive)":"var(--chart-5)";
       var el=document.createElement("div"); el.className="profile";
       var av=document.createElement("span"); av.className="avatar"; av.textContent=(p.name||"?").charAt(0); el.appendChild(av);
