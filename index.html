@@ -95,7 +95,8 @@ button{cursor:pointer}
 .bub{padding:0;overflow-wrap:anywhere;white-space:pre-wrap}
 .msg.me .bub{background:var(--muted);padding:var(--space-8) var(--space-16)}
 .composer{background:var(--background);box-shadow:inset 0 0 0 1px var(--input),var(--shadow-1);min-height:52px;padding:0 var(--space-12) 0 var(--space-20);display:flex;gap:var(--space-8);align-items:center}
-.composer .input{border:0;height:36px;padding:0}
+.composer .input{border:0;height:36px;min-height:36px;max-height:160px;padding:var(--space-6,6px) 0;line-height:24px;resize:none;overflow-y:auto;scrollbar-width:thin}
+.composer{align-items:flex-end;padding-top:var(--space-8);padding-bottom:var(--space-8)}
 .btn--icon{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .btn--icon svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .empty{margin:auto;text-align:center;color:var(--muted-foreground);padding:var(--space-24)}
@@ -246,6 +247,23 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .msg:not(.me) .who{color:var(--muted-foreground);font-size:14px;line-height:22px;padding-bottom:var(--space-8);margin-bottom:var(--space-8);border-bottom:1px solid var(--border)}
 .msg:not(.me) .bub{font-size:15px;line-height:26px}
 .msg .bub strong{font-weight:700}
+.rp{margin:0 0 var(--space-12)}
+.rp:last-child,.rl:last-child{margin-bottom:0}
+.rh{font-weight:700;margin:var(--space-8) 0 var(--space-8)}
+.rh1{font-size:20px;line-height:28px}.rh2{font-size:17px;line-height:26px}.rh3{font-size:15px}
+.rl{margin:0 0 var(--space-12);padding-left:var(--space-24)}
+.rl li{margin:var(--space-2) 0}
+.bub code{background:var(--muted);padding:0 var(--space-4);border-radius:var(--radius-md);font-size:13px}
+.bub a{color:var(--chart-1);text-decoration:underline;text-underline-offset:2px}
+.bub hr{border:0;border-top:1px solid var(--border);margin:var(--space-12) 0}
+.tblwrap{overflow-x:auto;margin:0 0 var(--space-12)}
+.rt{border-collapse:collapse;width:100%;font-size:14px;line-height:22px}
+.rt th{text-align:left;font-weight:600;color:var(--muted-foreground);padding:var(--space-8) var(--space-8) var(--space-8) 0;border-bottom:1px solid var(--border)}
+.rt td{padding:var(--space-8) var(--space-8) var(--space-8) 0;border-bottom:1px solid var(--border)}
+.acts{display:flex;gap:var(--space-4);margin-top:var(--space-8)}
+.actbtn{width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;background:none;border:0;border-radius:var(--radius-md);color:var(--muted-foreground);cursor:pointer}
+.actbtn:hover{background:var(--accent);color:var(--foreground)}
+.actbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -296,7 +314,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       </form>
       <div id="log" aria-live="polite"></div>
       <form class="composer" id="composer">
-        <input class="input" type="text" id="text" maxlength="500" placeholder="무엇이든 물어보세요" aria-label="메시지" autocomplete="off">
+        <textarea class="input" id="text" rows="1" maxlength="1000" placeholder="무엇이든 물어보세요" aria-label="메시지 (Shift+Enter로 줄바꿈)"></textarea>
         <button class="btn btn--icon" type="submit" aria-label="보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg></button>
       </form>
       <p class="caption footnote">실수할 수 있습니다. 중요한 정보는 확인하세요.</p>
@@ -582,6 +600,54 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     var p=document.createElement("p");p.textContent=desc;d.appendChild(h);d.appendChild(p);return d;
   }
   var shown=-1;
+  /* 간단한 마크다운: 제목, 목록, 표, 굵게, 코드, 링크, 줄바꿈 */
+  function inlineInto(p,text){
+    text.split(/(\*\*[^*]+\*\*|`[^`]+`|https?:\/\/[^\s)]+)/).forEach(function(t){
+      if(!t)return;
+      if(/^\*\*[^*]+\*\*$/.test(t)){var st=document.createElement("strong");st.textContent=t.slice(2,-2);p.appendChild(st)}
+      else if(/^`[^`]+`$/.test(t)){var cd=document.createElement("code");cd.textContent=t.slice(1,-1);p.appendChild(cd)}
+      else if(/^https?:\/\//.test(t)){var a=document.createElement("a");a.href=t;a.target="_blank";a.rel="noopener noreferrer";a.textContent=t;p.appendChild(a)}
+      else p.appendChild(document.createTextNode(t));
+    });
+  }
+  function cells(line){return line.trim().replace(/^\|/,"").replace(/\|$/,"").split("|").map(function(c){return c.trim()})}
+  function richInto(box,text){
+    var lines=text.split("\n"), i=0;
+    while(i<lines.length){
+      var ln=lines[i];
+      if(!ln.trim()){i++;continue}
+      var h=ln.match(/^(#{1,3})\s+(.*)$/);
+      if(h){var hd=document.createElement("div");hd.className="rh rh"+h[1].length;inlineInto(hd,h[2]);box.appendChild(hd);i++;continue}
+      if(/^\s*(---|\*\*\*)\s*$/.test(ln)){box.appendChild(document.createElement("hr"));i++;continue}
+      if(/^\|/.test(ln)&&i+1<lines.length&&/^\|?\s*:?-{2,}/.test(lines[i+1])){
+        var head=cells(ln); i+=2; var rows=[];
+        while(i<lines.length&&/^\|/.test(lines[i])){rows.push(cells(lines[i]));i++}
+        var wrap=document.createElement("div");wrap.className="tblwrap";
+        var tb=document.createElement("table");tb.className="rt";
+        var tr=document.createElement("tr");head.forEach(function(c){var th=document.createElement("th");inlineInto(th,c);tr.appendChild(th)});
+        var thd=document.createElement("thead");thd.appendChild(tr);tb.appendChild(thd);
+        var tbd=document.createElement("tbody");
+        rows.forEach(function(r){var tr2=document.createElement("tr");r.forEach(function(c){var td=document.createElement("td");inlineInto(td,c);tr2.appendChild(td)});tbd.appendChild(tr2)});
+        tb.appendChild(tbd);wrap.appendChild(tb);box.appendChild(wrap);continue;
+      }
+      var ul=/^\s*[-*]\s+/.test(ln), ol=/^\s*\d+[.)]\s+/.test(ln);
+      if(ul||ol){
+        var list=document.createElement(ol?"ol":"ul");list.className="rl";
+        while(i<lines.length&&(ol?/^\s*\d+[.)]\s+/.test(lines[i]):/^\s*[-*]\s+/.test(lines[i]))){
+          var li=document.createElement("li");inlineInto(li,lines[i].replace(ol?/^\s*\d+[.)]\s+/:/^\s*[-*]\s+/,""));list.appendChild(li);i++;
+        }
+        box.appendChild(list);continue;
+      }
+      var para=document.createElement("p");para.className="rp";
+      var first=true;
+      while(i<lines.length&&lines[i].trim()&&!/^(#{1,3}\s|\||\s*[-*]\s|\s*\d+[.)]\s)/.test(lines[i])){
+        if(!first)para.appendChild(document.createElement("br"));
+        inlineInto(para,lines[i]);first=false;i++;
+      }
+      if(first){inlineInto(para,lines[i]);i++}
+      box.appendChild(para);
+    }
+  }
   function renderChat(){
     if(shown===S.chat.length)return; shown=S.chat.length;
     var log=$("log"); log.textContent="";
@@ -594,14 +660,31 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
         who.textContent=m.name+(tm?" · "+tm:""); w.appendChild(who);
       }
       var b=document.createElement("div"); b.className="bub";
-      m.text.split(/(\*\*[^*]+\*\*)/).forEach(function(part){
-        if(/^\*\*[^*]+\*\*$/.test(part)){var st=document.createElement("strong");st.textContent=part.slice(2,-2);b.appendChild(st)}
-        else if(part)b.appendChild(document.createTextNode(part));
-      });
+      richInto(b,m.text);
+      if(m.uid!==myId){
+        var act=document.createElement("div"); act.className="acts";
+        var cp=document.createElement("button"); cp.type="button"; cp.className="actbtn"; cp.setAttribute("aria-label","복사"); cp.title="복사";
+        cp.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>';
+        (function(txt,btn){btn.onclick=function(){
+          function ok(){btn.title="복사됨";setTimeout(function(){btn.title="복사"},1200)}
+          if(navigator.clipboard)navigator.clipboard.writeText(txt).then(ok,function(){});
+        }})(m.text,cp);
+        act.appendChild(cp); w.appendChild(b); w.appendChild(act); log.appendChild(w); return;
+      }
       w.appendChild(b); log.appendChild(w);
     });
     log.scrollTop=log.scrollHeight;
   }
+  (function(){
+    var ta=$("text");
+    function fit(){ta.style.height="auto";ta.style.height=Math.min(ta.scrollHeight,160)+"px"}
+    ta.addEventListener("input",fit);
+    ta.addEventListener("keydown",function(e){
+      if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("composer").requestSubmit()}
+    });
+    new MutationObserver(fit).observe(ta,{attributes:true});
+    $("composer").addEventListener("submit",function(){setTimeout(fit,0)});
+  })();
   $("composer").onsubmit=function(e){
     e.preventDefault();
     var t=$("text").value.trim(); if(!t)return;
