@@ -107,7 +107,7 @@ button{cursor:pointer}
 .chip.b{background:var(--stone-black);box-shadow:0 0 0 1px var(--stone-edge)}
 .chip.w{background:var(--stone-white);box-shadow:0 0 0 1px var(--stone-edge)}
 #boardwrap{flex:1;min-height:0;display:flex;justify-content:center;align-items:center}
-#board{width:min(100%,calc(100vh - 150px),960px);min-width:280px;aspect-ratio:1;display:grid;grid-template-columns:repeat(15,1fr);background:var(--accent)}
+#board{width:100%;aspect-ratio:1;display:grid;grid-template-columns:repeat(15,1fr);background:var(--accent)}
 .c{position:relative;border:0;background:none;padding:0;min-width:0;min-height:0}
 .c::before,.c::after{content:"";position:absolute;background:color-mix(in srgb,var(--muted-foreground) 40%,transparent)}
 .c::before{left:0;right:0;top:50%;height:1px}
@@ -238,6 +238,10 @@ button.seat{cursor:pointer;color:var(--muted-foreground);font:inherit;font-size:
 button.seat:hover{background:var(--accent);color:var(--foreground)}
 .seat .x{background:none;border:0;padding:0 0 0 var(--space-4);color:var(--muted-foreground);cursor:pointer;line-height:1;font-size:15px}
 .seat .x:hover{color:var(--foreground)}
+.bcol{width:min(100%,calc(100vh - 190px),960px);min-width:280px;display:flex;flex-direction:column;gap:var(--space-8)}
+.btop{display:flex;align-items:center;gap:var(--space-8);flex-wrap:wrap;min-height:32px}
+.btop .text-muted{font-size:13px}
+.opctl #seats{opacity:var(--cv,1)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -304,11 +308,15 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       <span id="opval" hidden>100%</span>
     </div>
     <h2 class="sr-only" id="h-game">캔버스</h2>
-    <div id="boardwrap"><div id="board"></div></div>
-    <div class="row">
-      <span class="text-muted" id="gamestatus"></span>
-      <button class="btn btn--outline btn--xs" id="solo" type="button" style="margin-left:auto">AI와 대결</button>
-      <button class="btn btn--outline btn--xs" id="reset" type="button">새로 시작</button>
+    <div id="boardwrap">
+      <div class="bcol">
+        <div class="btop">
+          <span class="text-muted" id="gamestatus"></span>
+          <button class="btn btn--outline btn--xs" id="solo" type="button" style="margin-left:auto">AI와 대결</button>
+          <button class="btn btn--outline btn--xs" id="reset" type="button">새로 시작</button>
+        </div>
+        <div id="board"></div>
+      </div>
     </div>
   </aside>
 </div>
