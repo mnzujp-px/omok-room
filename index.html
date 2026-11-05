@@ -202,6 +202,12 @@ button{cursor:pointer}
 #log{scrollbar-width:thin;scrollbar-color:transparent transparent}
 #log.scrolling{scrollbar-color:var(--muted-foreground) transparent}
 .composer .input:focus,.composer .input:focus-visible{outline:none;box-shadow:none}
+.win{text-align:center;width:min(400px,calc(100vw - 32px));padding:var(--space-32,32px) var(--space-24);overflow:visible}
+.win__stone{display:block;width:56px;height:56px;margin:var(--space-16) auto var(--space-12);border-radius:var(--radius-full)}
+.win__stone.b{background:var(--foreground)}
+.win__stone.w{background:var(--muted);box-shadow:inset 0 0 0 3px var(--foreground)}
+.win__title{margin:0;font-size:44px;line-height:52px;font-weight:700;letter-spacing:-0.025em}
+.win__name{margin:var(--space-4) 0 0;color:var(--muted-foreground)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -278,6 +284,17 @@ button{cursor:pointer}
     </div>
   </aside>
 </div>
+
+<dialog class="dialog win" id="windlg" aria-labelledby="wintitle">
+  <p class="caption">게임 종료</p>
+  <span class="win__stone" id="winstone"></span>
+  <h2 class="win__title" id="wintitle">WIN!!</h2>
+  <p class="win__name" id="winname"></p>
+  <div class="row" style="justify-content:center;margin-top:var(--space-24)">
+    <button class="btn btn--outline" type="button" id="winclose">닫기</button>
+    <button class="btn" type="button" id="winreset">새로 시작</button>
+  </div>
+</dialog>
 
 <dialog class="dialog" id="csdlg" aria-labelledby="cs-title">
   <form id="csform" method="dialog" novalidate>
@@ -473,7 +490,7 @@ button{cursor:pointer}
   function toggleBoss(show){$("boss").hidden=!show}
   $("hide").onclick=function(){toggleBoss(true)};
   $("boss").onclick=function(){toggleBoss(false)};
-  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("csdlg").open)toggleBoss($("boss").hidden)});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("csdlg").open&&!$("windlg").open)toggleBoss($("boss").hidden)});
 
   /* 문의: Web3Forms로 메일 전달 (공개용 접수 키) */
   var CS_KEY="7e282b2f-1577-4959-9c2b-cea3ebee8caf";
@@ -530,6 +547,16 @@ button{cursor:pointer}
     $("text").value=""; send({t:"chat",name:myName(),text:t});
   };
 
+  /* 승리 모달 */
+  function showWin(g){
+    var side=g.winner, w=side==="b"?g.black:g.white;
+    $("winstone").className="win__stone "+side;
+    $("wintitle").textContent=(side==="b"?"흑돌":"백돌")+" WIN!!";
+    $("winname").textContent=w&&w.name?w.name+" 님 승리":"";
+    if(!$("windlg").open)$("windlg").showModal();
+  }
+  $("winclose").onclick=function(){$("windlg").close()};
+  $("winreset").onclick=function(){$("windlg").close();send({t:"reset"})};
   /* 승리 콘페티 */
   var prevWin="";
   function confetti(){
@@ -539,8 +566,10 @@ button{cursor:pointer}
     var cv=document.createElement("canvas");
     cv.setAttribute("aria-hidden","true");
     cv.style.cssText="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60";
+    var cvOp=parseFloat(getComputedStyle($("canvas")).getPropertyValue("--cv"));
+    cv.style.opacity=isNaN(cvOp)?1:cvOp;
     var dpr=window.devicePixelRatio||1, W=window.innerWidth, H=window.innerHeight;
-    cv.width=W*dpr; cv.height=H*dpr; document.body.appendChild(cv);
+    cv.width=W*dpr; cv.height=H*dpr; ($("windlg").open?$("windlg"):document.body).appendChild(cv);
     var ctx=cv.getContext("2d"); ctx.scale(dpr,dpr);
     var ps=[];
     for(var i=0;i<160;i++){
@@ -669,7 +698,7 @@ button{cursor:pointer}
     else if(!side)st="구경 중입니다.";
     else st=g.turn===side?"내 차례입니다.":"상대 차례입니다.";
     $("gamestatus").textContent=st;
-    if(prevWin!==null){if(!prevWin&&g.winner)confetti();prevWin=g.winner}
+    if(prevWin!==null){if(!prevWin&&g.winner){showWin(g);confetti()}prevWin=g.winner}
   }
   function render(){
     if(isHost)setConn("방장 · 접속 "+S.count+"명"+(S.count<2?" · 링크를 친구에게 보내세요":""));
