@@ -274,6 +274,10 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .rl li.task input{margin:0 var(--space-8) 0 0;vertical-align:middle}
 .rl .rl{margin:var(--space-2) 0}
 .bub em{font-style:italic}.bub del{color:var(--muted-foreground)}
+.chips{display:flex;gap:var(--space-8);overflow-x:auto;scrollbar-width:none;padding:var(--space-2) 0}
+.chips::-webkit-scrollbar{display:none}
+.chipb{flex:none;height:32px;padding:0 var(--space-12);border:0;border-radius:var(--radius-full);background:transparent;color:var(--muted-foreground);box-shadow:inset 0 0 0 1px var(--input);font:inherit;font-size:13px;letter-spacing:inherit;cursor:pointer;transition:all var(--duration-quick) ease-out}
+.chipb:hover{background:var(--accent);color:var(--foreground)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -323,6 +327,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
         <button class="btn btn--outline" type="submit">저장</button>
       </form>
       <div id="log" aria-live="polite"></div>
+      <div class="chips" role="toolbar" aria-label="마크다운 서식"><button class="chipb" type="button" data-md="bold">굵게</button><button class="chipb" type="button" data-md="italic">기울임</button><button class="chipb" type="button" data-md="strike">취소선</button><button class="chipb" type="button" data-md="code">코드</button><button class="chipb" type="button" data-md="link">링크</button><button class="chipb" type="button" data-md="h">제목</button><button class="chipb" type="button" data-md="ul">목록</button><button class="chipb" type="button" data-md="ol">번호</button><button class="chipb" type="button" data-md="task">체크</button><button class="chipb" type="button" data-md="quote">인용</button><button class="chipb" type="button" data-md="block">코드 블록</button><button class="chipb" type="button" data-md="table">표</button><button class="chipb" type="button" data-md="hr">구분선</button></div>
       <form class="composer" id="composer">
         <textarea class="input" id="text" rows="1" maxlength="1000" placeholder="무엇이든 물어보세요" aria-label="메시지 (Shift+Enter로 줄바꿈)"></textarea>
         <button class="btn btn--icon" type="submit" aria-label="보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg></button>
@@ -762,6 +767,54 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("composer").requestSubmit()}
     });
     $("composer").addEventListener("submit",function(){setTimeout(fit,0)});
+  })();
+  /* 마크다운 서식 버튼: 선택한 글자에 적용하거나 예시를 넣는다 */
+  (function(){
+    var ta=$("text");
+    function setVal(v,a,b){ta.value=v;ta.focus();ta.setSelectionRange(a,b);ta.dispatchEvent(new Event("input",{bubbles:true}))}
+    function wrap(l,r,ph){
+      var a=ta.selectionStart,b=ta.selectionEnd,v=ta.value,sel=v.slice(a,b)||ph;
+      setVal(v.slice(0,a)+l+sel+r+v.slice(b),a+l.length,a+l.length+sel.length);
+    }
+    function lines(fn){
+      var v=ta.value,a=ta.selectionStart,b=ta.selectionEnd;
+      var ls=v.lastIndexOf("\n",a-1)+1,le=v.indexOf("\n",b); if(le<0)le=v.length;
+      var out=v.slice(ls,le).split("\n").map(fn).join("\n");
+      setVal(v.slice(0,ls)+out+v.slice(le),ls,ls+out.length);
+    }
+    function block(t){
+      var v=ta.value,a=ta.selectionStart,b=ta.selectionEnd,pre=(a>0&&v.charAt(a-1)!=="\n")?"\n":"";
+      var ins=pre+t+"\n";
+      setVal(v.slice(0,a)+ins+v.slice(b),a+ins.length-1,a+ins.length-1);
+    }
+    var act={
+      bold:function(){wrap("**","**","굵은 글씨")},
+      italic:function(){wrap("*","*","기울인 글씨")},
+      strike:function(){wrap("~~","~~","취소선")},
+      code:function(){wrap("`","`","코드")},
+      link:function(){
+        var a=ta.selectionStart,b=ta.selectionEnd,v=ta.value,sel=v.slice(a,b)||"링크 글자";
+        var ins="["+sel+"](https://)", cs=a+sel.length+3;
+        setVal(v.slice(0,a)+ins+v.slice(b),cs,cs+8);
+      },
+      h:function(){lines(function(l){return "# "+(l.replace(/^#{1,6}\s+/,"")||"제목")})},
+      ul:function(){lines(function(l){return "- "+(l.replace(/^\s*[-*+]\s+/,"")||"항목")})},
+      ol:function(){var n=0;lines(function(l){n++;return n+". "+(l.replace(/^\s*\d+[.)]\s+/,"")||"항목")})},
+      task:function(){lines(function(l){return "- [ ] "+(l.replace(/^\s*[-*+]\s+(\[[ xX]\]\s+)?/,"")||"할 일")})},
+      quote:function(){lines(function(l){return "> "+(l.replace(/^>\s?/,"")||"인용")})},
+      block:function(){
+        var a=ta.selectionStart,b=ta.selectionEnd,v=ta.value,sel=v.slice(a,b)||"코드",pre=(a>0&&v.charAt(a-1)!=="\n")?"\n":"";
+        var ins=pre+"```\n"+sel+"\n```\n";
+        setVal(v.slice(0,a)+ins+v.slice(b),a+pre.length+4,a+pre.length+4+sel.length);
+      },
+      table:function(){block("| 항목 | 값 |\n|---|---|\n| 내용 | 내용 |")},
+      hr:function(){block("---")}
+    };
+    var bar=document.querySelector(".chips");
+    bar.addEventListener("mousedown",function(e){if(e.target.closest(".chipb"))e.preventDefault()});
+    bar.addEventListener("click",function(e){
+      var b=e.target.closest(".chipb"); if(b&&act[b.dataset.md])act[b.dataset.md]();
+    });
   })();
   $("composer").onsubmit=function(e){
     e.preventDefault();
