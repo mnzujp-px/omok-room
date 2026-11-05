@@ -20,7 +20,7 @@
   --primary:#0d0d0d; --primary-foreground:#ffffff;
   --muted:#f4f4f4; --muted-foreground:#6b6b6b; --accent:#ececec; --card:#f9f9f9;
   --border:rgba(0,0,0,0.08); --input:rgba(0,0,0,0.12); --ring:#0d0d0d;
-  --destructive:#ef4444; --chart-1:#2563eb; --chart-5:#f59e0b; --chart-4:#22c55e;
+  --destructive:#ef4444; --chart-1:#2563eb; --send:#3b82f6; --chart-5:#f59e0b; --chart-4:#22c55e;
   --glow:rgba(37,99,235,0.25);
   --shadow-1:0 1px 2px rgba(0,0,0,0.05);
   --shadow-glow:0 0 24px var(--glow);
@@ -93,10 +93,10 @@ button{cursor:pointer}
 .msg.me{align-self:flex-end;align-items:flex-end;max-width:84%}
 .bub{padding:0;overflow-wrap:anywhere;white-space:pre-wrap}
 .msg.me .bub{background:var(--muted);padding:var(--space-8) var(--space-16)}
-.composer{background:var(--background);box-shadow:inset 0 0 0 1px var(--input),var(--shadow-1);padding:var(--space-8) var(--space-8) var(--space-8) var(--space-16);display:flex;gap:var(--space-8);align-items:center}
-.composer .input{border:0;height:40px}
-.btn--icon{width:40px;height:40px;padding:0;display:inline-flex;align-items:center;justify-content:center}
-.btn--icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.composer{background:var(--background);box-shadow:inset 0 0 0 1px var(--input),var(--shadow-1);min-height:52px;padding:0 var(--space-12) 0 var(--space-20);display:flex;gap:var(--space-8);align-items:center}
+.composer .input{border:0;height:36px;padding:0}
+.btn--icon{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.btn--icon svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .empty{margin:auto;text-align:center;color:var(--muted-foreground);padding:var(--space-24)}
 .empty__title{color:var(--foreground);font-weight:600;font-size:18px;line-height:26px;margin:0 0 var(--space-4)}
 .empty p{margin:0}
@@ -146,9 +146,9 @@ button{cursor:pointer}
 .btn{border-radius:var(--radius-full)}
 .btn--xs{border-radius:var(--radius-full)}
 .input{border-radius:var(--radius-md)}
-.composer{border-radius:var(--radius-full);padding-left:var(--space-20)}
+.composer{border-radius:var(--radius-full)}
 .composer .input{border-radius:var(--radius-full)}
-.btn--icon{border-radius:var(--radius-full);background:var(--primary);color:var(--primary-foreground)}
+.btn--icon{border-radius:var(--radius-full);background:var(--send);color:#fff}
 .side__item{border-radius:var(--radius-lg)}
 .msg.me .bub{border-radius:var(--radius-2xl)}
 .seat{border-radius:var(--radius-lg)}
