@@ -63,7 +63,7 @@ button{cursor:pointer}
 .card--fill{flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--space-16)}
 /* 3단: 사이드바 / 대화 / 캔버스 */
 .app{height:100%;display:grid;grid-template-columns:minmax(0,1fr)}
-@media (min-width:1024px){.app{grid-template-columns:240px minmax(0,1fr)}.app.canvas-open{grid-template-columns:240px minmax(0,1fr) minmax(0,560px)}}
+@media (min-width:1024px){.app{grid-template-columns:240px minmax(0,1fr)}.app.canvas-open{grid-template-columns:240px minmax(0,1fr) var(--cw,560px)}}
 .side{display:none;background:var(--card);padding:var(--space-16);flex-direction:column;gap:var(--space-4);min-height:0}
 @media (min-width:1024px){.side{display:flex}}
 .side__item{padding:var(--space-8) var(--space-12);color:var(--muted-foreground);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -79,7 +79,12 @@ button{cursor:pointer}
 .chatwrap{flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--space-16);width:100%;max-width:720px;margin:0 auto}
 .canvas{display:none;background:var(--card);padding:var(--space-24);min-height:0;flex-direction:column;gap:var(--space-16)}
 .app.canvas-open .canvas{display:flex}
-.canvas>*:not(.opctl){opacity:var(--cv,1)}
+.canvas>*:not(.opctl):not(.resizer){opacity:var(--cv,1)}
+.canvas{position:relative}
+.resizer{display:none;position:absolute;left:-8px;top:0;bottom:0;width:12px;cursor:col-resize;z-index:5;touch-action:none}
+.resizer::after{content:"";position:absolute;left:5px;top:50%;width:3px;height:40px;margin-top:-20px;background:var(--border);border-radius:var(--radius-full)}
+.resizer:hover::after,.resizer:focus-visible::after,.resizer.drag::after{background:var(--muted-foreground)}
+@media (min-width:1024px){.resizer{display:block}}
 .opctl{display:flex;align-items:center;gap:var(--space-12);color:var(--muted-foreground)}
 .opctl input{flex:1;min-width:0;accent-color:var(--chart-1)}
 .iconbtn{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--radius-lg)}
@@ -102,7 +107,7 @@ button{cursor:pointer}
 .chip.b{background:var(--foreground)}
 .chip.w{box-shadow:inset 0 0 0 2px var(--foreground)}
 #boardwrap{flex:1;min-height:0;display:flex;justify-content:center;align-items:center}
-#board{width:min(100%,calc(100vh - 200px),720px);min-width:280px;aspect-ratio:1;display:grid;grid-template-columns:repeat(15,1fr);background:var(--accent)}
+#board{width:min(100%,calc(100vh - 200px),960px);min-width:280px;aspect-ratio:1;display:grid;grid-template-columns:repeat(15,1fr);background:var(--accent)}
 .c{position:relative;border:0;background:none;padding:0;min-width:0;min-height:0}
 .c::before,.c::after{content:"";position:absolute;background:color-mix(in srgb,var(--muted-foreground) 40%,transparent)}
 .c::before{left:0;right:0;top:50%;height:1px}
@@ -197,6 +202,7 @@ button{cursor:pointer}
   </main>
 
   <aside class="canvas" id="canvas" aria-labelledby="h-game">
+    <div class="resizer" id="resizer" role="separator" aria-orientation="vertical" aria-label="캔버스 너비 조절" tabindex="0"></div>
     <div class="opctl">
       <label for="opacity" class="caption">투명도</label>
       <input type="range" id="opacity" min="10" max="100" step="5" value="100" aria-label="캔버스 투명도">
@@ -406,6 +412,29 @@ button{cursor:pointer}
   }
   $("opacity").oninput=function(){setOpacity(this.value)};
   (function(){var v=100;try{v=localStorage.getItem("br-opacity")||100}catch(e){}setOpacity(v)})();
+  var DEFAULT_W=560;
+  function maxW(){return Math.max(320,Math.min(1000,window.innerWidth-240-320))}
+  function setWidth(w){
+    w=Math.max(320,Math.min(maxW(),Math.round(w)));
+    document.querySelector(".app").style.setProperty("--cw",w+"px");
+    try{localStorage.setItem("br-cw",w)}catch(e){}
+    return w;
+  }
+  (function(){var w=DEFAULT_W;try{w=+localStorage.getItem("br-cw")||DEFAULT_W}catch(e){}setWidth(w)})();
+  window.addEventListener("resize",function(){var cur=parseInt(getComputedStyle(document.querySelector(".app")).getPropertyValue("--cw"))||DEFAULT_W;setWidth(cur)});
+  (function(){
+    var rz=$("resizer"), dragging=false;
+    rz.addEventListener("pointerdown",function(e){dragging=true;rz.setPointerCapture(e.pointerId);rz.classList.add("drag");document.body.style.userSelect="none";e.preventDefault()});
+    rz.addEventListener("pointermove",function(e){if(dragging)setWidth(window.innerWidth-e.clientX-12)});
+    function stop(){dragging=false;rz.classList.remove("drag");document.body.style.userSelect=""}
+    rz.addEventListener("pointerup",stop); rz.addEventListener("pointercancel",stop);
+    rz.addEventListener("dblclick",function(){setWidth(DEFAULT_W)});
+    rz.addEventListener("keydown",function(e){
+      var cur=parseInt(getComputedStyle(document.querySelector(".app")).getPropertyValue("--cw"))||DEFAULT_W;
+      if(e.key==="ArrowLeft"){setWidth(cur+32);e.preventDefault()}
+      else if(e.key==="ArrowRight"){setWidth(cur-32);e.preventDefault()}
+    });
+  })();
   var appEl=document.querySelector(".app");
   function setCanvas(open){
     appEl.classList.toggle("canvas-open",open);
