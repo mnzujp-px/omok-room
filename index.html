@@ -79,6 +79,9 @@ button{cursor:pointer}
 .chatwrap{flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--space-16);width:100%;max-width:720px;margin:0 auto}
 .canvas{display:none;background:var(--card);padding:var(--space-24);min-height:0;flex-direction:column;gap:var(--space-16)}
 .app.canvas-open .canvas{display:flex}
+.canvas>*:not(.opctl){opacity:var(--cv,1)}
+.opctl{display:flex;align-items:center;gap:var(--space-12);color:var(--muted-foreground)}
+.opctl input{flex:1;min-width:0;accent-color:var(--chart-1)}
 .iconbtn{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--radius-lg)}
 .iconbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8}
 .h4{font-size:18px;line-height:26px;font-weight:600;letter-spacing:-0.015em}
@@ -194,6 +197,11 @@ button{cursor:pointer}
   </main>
 
   <aside class="canvas" id="canvas" aria-labelledby="h-game">
+    <div class="opctl">
+      <label for="opacity" class="caption">투명도</label>
+      <input type="range" id="opacity" min="10" max="100" step="5" value="100" aria-label="캔버스 투명도">
+      <span class="caption" id="opval">100%</span>
+    </div>
     <div class="row">
       <h2 class="h4" id="h-game" style="margin-right:auto">캔버스</h2>
       <div class="row" id="seats"></div>
@@ -390,6 +398,14 @@ button{cursor:pointer}
     themeLabel();
   };
   themeLabel();
+  function setOpacity(v){
+    v=Math.max(10,Math.min(100,+v||100));
+    $("canvas").style.setProperty("--cv",v/100);
+    $("opacity").value=v; $("opval").textContent=v+"%";
+    try{localStorage.setItem("br-opacity",v)}catch(e){}
+  }
+  $("opacity").oninput=function(){setOpacity(this.value)};
+  (function(){var v=100;try{v=localStorage.getItem("br-opacity")||100}catch(e){}setOpacity(v)})();
   var appEl=document.querySelector(".app");
   function setCanvas(open){
     appEl.classList.toggle("canvas-open",open);
