@@ -166,10 +166,21 @@ button{cursor:pointer}
 .person .dot{width:8px;height:8px;border-radius:var(--radius-full);flex:none}
 .person .st{color:var(--muted-foreground)}
 .statusbox{height:32px;width:auto;flex:none;padding:0 var(--space-8);font-size:13px;border-radius:var(--radius-full)}
+.opfloat{position:fixed;right:8px;top:50%;transform:translateY(-50%);z-index:20;flex-direction:column;gap:var(--space-4);padding:var(--space-8) var(--space-4);width:36px;background:var(--card);box-shadow:var(--shadow-2,0 4px 6px -1px rgba(0,0,0,0.1));border-radius:var(--radius-full);align-items:center;font-size:11px;opacity:.85}
+.opfloat:hover,.opfloat:focus-within{opacity:1}
+.opfloat .caption{font-size:11px;line-height:14px}
+.opbox{position:relative;width:16px;height:96px}
+.opbox input{position:absolute;left:50%;top:50%;width:96px;transform:translate(-50%,-50%) rotate(-90deg)}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
+<div class="opctl opfloat" role="group" aria-label="캔버스 투명도">
+  <span class="caption" id="opval">100%</span>
+  <div class="opbox"><input type="range" id="opacity" min="10" max="100" step="5" value="100" aria-label="캔버스 투명도"></div>
+  <label for="opacity" class="caption">투명</label>
+</div>
+
 <div class="app">
   <nav class="side" aria-label="대화 목록">
     <div class="side__title">업무 도우미</div>
@@ -214,11 +225,6 @@ button{cursor:pointer}
 
   <aside class="canvas" id="canvas" aria-labelledby="h-game">
     <div class="resizer" id="resizer" role="separator" aria-orientation="vertical" aria-label="캔버스 너비 조절" tabindex="0"></div>
-    <div class="opctl">
-      <label for="opacity" class="caption">투명도</label>
-      <input type="range" id="opacity" min="10" max="100" step="5" value="100" aria-label="캔버스 투명도">
-      <span class="caption" id="opval">100%</span>
-    </div>
     <div class="row">
       <h2 class="h4" id="h-game" style="margin-right:auto">캔버스</h2>
       <div class="row" id="seats"></div>
