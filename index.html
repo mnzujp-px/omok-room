@@ -844,15 +844,21 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       busy=true; btn.classList.add("busy"); say("AI가 다듬는 중…");
       var session=null;
       try{
+        var KO={expectedInputs:[{type:"text",languages:["ko"]}],expectedOutputs:[{type:"text",languages:["ko"]}]};
+        var choice=null, lastAv="";
         if(LM.availability){
-          var av=await LM.availability({expectedInputs:[{type:"text",languages:["ko"]}],expectedOutputs:[{type:"text",languages:["ko"]}]});
-          if(av==="unavailable"){say("이 컴퓨터에서는 크롬 내장 AI를 쓸 수 없어요.");return}
-        }
+          var tries=[KO,{}];
+          for(var k=0;k<tries.length&&!choice;k++){
+            try{lastAv=await LM.availability(tries[k])}catch(e0){lastAv="error"}
+            if(lastAv&&lastAv!=="unavailable"&&lastAv!=="no"&&lastAv!=="error")choice=tries[k];
+          }
+          if(!choice){say("이 컴퓨터에서는 크롬 내장 AI를 쓸 수 없어요. (상태: "+lastAv+") 설정은 안내를 확인하세요.");return}
+        }else choice={};
         var opts={
-          expectedInputs:[{type:"text",languages:["ko"]}],expectedOutputs:[{type:"text",languages:["ko"]}],
           initialPrompts:[{role:"system",content:SYSTEM}],
           monitor:function(m){m.addEventListener("downloadprogress",function(e){say("AI 모델을 내려받는 중 "+Math.round(e.loaded*100)+"%")})}
         };
+        if(choice.expectedInputs){opts.expectedInputs=choice.expectedInputs;opts.expectedOutputs=choice.expectedOutputs}
         try{session=await LM.create(opts)}
         catch(e1){session=await LM.create({systemPrompt:SYSTEM})}
         var out=clean(await session.prompt("다음 문장을 다듬어라:\n\n"+text));
