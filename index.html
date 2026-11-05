@@ -172,7 +172,7 @@ button{cursor:pointer}
 .pst .dot{width:8px;height:8px;border-radius:var(--radius-full);flex:none}
 .stsel{background:transparent;border:0;padding:0;color:var(--muted-foreground);font-size:12px;cursor:pointer;max-width:100%}
 .stsel:focus-visible{outline:2px solid var(--ring)}
-.opctl{display:flex;justify-content:flex-end;align-items:center;margin:calc(var(--space-8) * -1) 0 calc(var(--space-4) * -1)}
+.opctl{display:flex;justify-content:space-between;align-items:center;margin:calc(var(--space-8) * -1) 0 calc(var(--space-4) * -1)}
 .opctl input{width:96px;height:16px;margin:0;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
 .opctl input::-webkit-slider-runnable-track{height:2px;background:linear-gradient(to right,var(--muted-foreground) var(--p,100%),var(--input) var(--p,100%))}
 .opctl input::-moz-range-track{height:2px;background:linear-gradient(to right,var(--muted-foreground) var(--p,100%),var(--input) var(--p,100%))}
@@ -227,7 +227,7 @@ button{cursor:pointer}
       <button class="btn btn--ghost btn--xs" id="cs" type="button">문의</button>
       <button class="btn btn--ghost btn--xs" id="hide" type="button" title="Esc 키로도 됩니다">숨기기 (Esc)</button>
       <button class="btn btn--outline btn--xs" id="theme" type="button">다크 모드</button>
-      <button class="btn btn--ghost iconbtn" id="togglecanvas" type="button" aria-label="캔버스 열기·닫기" aria-pressed="true" title="캔버스 열기·닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="5"/><path d="M14.5 4v16"/></svg></button>
+      <button class="btn btn--ghost iconbtn tcv" id="togglecanvas" type="button" aria-label="캔버스 열기·닫기" aria-pressed="true" title="캔버스 열기·닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="5"/><path d="M14.5 4v16"/></svg></button>
     </header>
     <div class="chatwrap">
       <form class="row" id="nickbar" hidden>
@@ -245,7 +245,8 @@ button{cursor:pointer}
 
   <aside class="canvas" id="canvas" aria-labelledby="h-game">
     <div class="resizer" id="resizer" role="separator" aria-orientation="vertical" aria-label="캔버스 너비 조절" tabindex="0"></div>
-    <div class="opctl" role="group" aria-label="캔버스 투명도">
+    <div class="opctl" role="group" aria-label="캔버스 도구">
+      <button class="btn btn--ghost iconbtn tcv" type="button" aria-label="캔버스 열기·닫기" aria-pressed="true" title="캔버스 닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="5"/><path d="M14.5 4v16"/></svg></button>
       <input type="range" id="opacity" min="10" max="100" step="5" value="100" aria-label="캔버스 투명도" title="투명도">
       <span id="opval" hidden>100%</span>
     </div>
@@ -554,13 +555,13 @@ button{cursor:pointer}
   var appEl=document.querySelector(".app");
   function setCanvas(open){
     appEl.classList.toggle("canvas-open",open);
-    $("togglecanvas").setAttribute("aria-pressed",open);
+    document.querySelectorAll(".tcv").forEach(function(b){b.setAttribute("aria-pressed",open)});
     try{localStorage.setItem("br-canvas",open?"1":"0")}catch(e){}
   }
   var wide=window.matchMedia("(min-width:1024px)").matches, saved=null;
   try{saved=localStorage.getItem("br-canvas")}catch(e){}
   setCanvas(saved===null?wide:saved==="1"&&true);
-  $("togglecanvas").onclick=function(){setCanvas(!appEl.classList.contains("canvas-open"))};
+  document.querySelectorAll(".tcv").forEach(function(b){b.onclick=function(){setCanvas(!appEl.classList.contains("canvas-open"))}});
   $("reset").onclick=function(){send({t:"reset"})};
   function mySide(){
     var g=S.game;
