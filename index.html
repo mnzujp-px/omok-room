@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="light dark">
+<script>try{if(localStorage.getItem("br-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>4분기 운영 현황 정리</title>
 <meta property="og:title" content="4분기 운영 현황 정리">
@@ -27,6 +28,15 @@
   --font-sans:"Pretendard Variable","Pretendard",-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --duration-quick:150ms;
 }
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --background:#212121; --foreground:#ececec;
+  --primary:#ececec; --primary-foreground:#212121;
+  --muted:#303030; --muted-foreground:#b4b4b4; --accent:#2f2f2f; --card:#171717;
+  --border:rgba(255,255,255,0.1); --input:rgba(255,255,255,0.15); --ring:#ececec;
+  --chart-1:#10a37f; --glow:rgba(16,163,127,0.3);
+}
+:root[data-theme="dark"] .composer{background:var(--muted);box-shadow:none}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0ms!important;animation-duration:0ms!important}}
 *{box-sizing:border-box;border-radius:0}
 html,body{height:100%;margin:0}
@@ -149,6 +159,7 @@ button{cursor:pointer}
       <button class="btn btn--outline btn--xs" id="copy" type="button">링크 복사</button>
       <button class="btn btn--outline btn--xs" id="me" type="button">이름 정하기</button>
       <button class="btn btn--ghost btn--xs" id="hide" type="button" title="Esc 키로도 됩니다">숨기기 (Esc)</button>
+      <button class="btn btn--outline btn--xs" id="theme" type="button">다크 모드</button>
       <button class="btn btn--outline btn--xs" id="togglecanvas" type="button">캔버스 열기</button>
     </header>
     <div class="chatwrap">
@@ -337,6 +348,14 @@ button{cursor:pointer}
     b.setAttribute("aria-label",(r+1)+"행 "+(c+1)+"열"); b.dataset.i=i; cellEls.push(b); board.appendChild(b);
   }
   board.addEventListener("click",function(e){var el=e.target.closest(".c");if(el)send({t:"move",i:+el.dataset.i})});
+  function themeLabel(){$("theme").textContent=document.documentElement.getAttribute("data-theme")==="dark"?"라이트 모드":"다크 모드"}
+  $("theme").onclick=function(){
+    var d=document.documentElement, dark=d.getAttribute("data-theme")==="dark";
+    if(dark)d.removeAttribute("data-theme");else d.setAttribute("data-theme","dark");
+    try{localStorage.setItem("br-theme",dark?"light":"dark")}catch(e){}
+    themeLabel();
+  };
+  themeLabel();
   $("togglecanvas").onclick=function(){var c=$("canvas").classList.toggle("canvas--open");$("togglecanvas").textContent=c?"캔버스 닫기":"캔버스 열기"};
   $("reset").onclick=function(){send({t:"reset"})};
   function mySide(){
