@@ -543,6 +543,10 @@ button{cursor:pointer}
   $("composer").onsubmit=function(e){
     e.preventDefault();
     var t=$("text").value.trim(); if(!t)return;
+    if(t==="/승리"||t==="/win"){
+      $("text").value="";
+      showWin({winner:"b",black:{name:myName()},white:null}); confetti(); return;
+    }
     if(!nick){$("nickbar").hidden=false;$("nick").focus();return}
     $("text").value=""; send({t:"chat",name:myName(),text:t});
   };
