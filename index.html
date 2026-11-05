@@ -166,19 +166,32 @@ button{cursor:pointer}
 .person .dot{width:8px;height:8px;border-radius:var(--radius-full);flex:none}
 .person .st{color:var(--muted-foreground)}
 .statusbox{height:32px;width:auto;flex:none;padding:0 var(--space-8);font-size:13px;border-radius:var(--radius-full)}
-.opfloat{position:fixed;right:8px;top:50%;transform:translateY(-50%);z-index:20;flex-direction:column;gap:var(--space-4);padding:var(--space-8) var(--space-4);width:36px;background:var(--card);box-shadow:var(--shadow-2,0 4px 6px -1px rgba(0,0,0,0.1));border-radius:var(--radius-full);align-items:center;font-size:11px;opacity:.85}
+.opfloat{position:fixed;right:12px;top:12px;z-index:20;flex-direction:row;gap:var(--space-8);padding:var(--space-4) var(--space-12);background:var(--card);box-shadow:var(--shadow-1),0 0 0 1px var(--border);border-radius:var(--radius-full);align-items:center;opacity:.85;height:32px}
 .opfloat:hover,.opfloat:focus-within{opacity:1}
-.opfloat .caption{font-size:11px;line-height:14px}
-.opbox{position:relative;width:16px;height:96px}
-.opbox input{position:absolute;left:50%;top:50%;width:96px;transform:translate(-50%,-50%) rotate(-90deg)}
+.opfloat .caption{font-size:11px;line-height:14px;min-width:28px;text-align:right}
+.opbox{width:80px;height:16px;display:flex;align-items:center}
+.opbox input{width:100%}
+.chatcol>header{padding-right:176px}
+@media (min-width:1024px){.app.canvas-open .chatcol>header{padding-right:0}.app.canvas-open .canvas{padding-top:var(--space-48)}}
+.profiles{margin-top:auto;display:flex;flex-direction:column;gap:var(--space-4);padding-top:var(--space-16)}
+#people{display:flex;flex-direction:column;gap:var(--space-4)}
+.profile{display:flex;align-items:center;gap:var(--space-12);padding:var(--space-8) var(--space-12);border-radius:var(--radius-lg);min-width:0}
+.profile.me{background:var(--accent)}
+.avatar{width:32px;height:32px;flex:none;border-radius:var(--radius-full);background:var(--primary);color:var(--primary-foreground);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
+.pinfo{display:flex;flex-direction:column;min-width:0;font-size:13px;line-height:18px}
+.pinfo>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pst{display:flex;align-items:center;gap:var(--space-6,6px);color:var(--muted-foreground);font-size:12px}
+.pst .dot{width:8px;height:8px;border-radius:var(--radius-full);flex:none}
+.stsel{background:transparent;border:0;padding:0;color:var(--muted-foreground);font-size:12px;cursor:pointer;max-width:100%}
+.stsel:focus-visible{outline:2px solid var(--ring)}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
 <div class="opctl opfloat" role="group" aria-label="캔버스 투명도">
-  <span class="caption" id="opval">100%</span>
+  <label for="opacity" class="caption">투명도</label>
   <div class="opbox"><input type="range" id="opacity" min="10" max="100" step="5" value="100" aria-label="캔버스 투명도"></div>
-  <label for="opacity" class="caption">투명</label>
+  <span class="caption" id="opval">100%</span>
 </div>
 
 <div class="app">
@@ -195,6 +208,15 @@ button{cursor:pointer}
     <div class="side__item">제작 일정 확인</div>
     <div class="side__item">예외 처리 기준 문구</div>
     <div class="side__item">업무 처리 사전 안내</div>
+    <div class="profiles">
+      <div id="people" aria-label="접속자 상태" aria-live="polite"></div>
+      <div class="profile me">
+        <span class="avatar" id="meav">나</span>
+        <div class="pinfo"><span id="mename">이름 없음</span>
+          <select id="status" class="stsel" aria-label="내 상태"><option>대화 가능</option><option>업무 중</option><option>회의 중</option><option>자리 비움</option></select>
+        </div>
+      </div>
+    </div>
   </nav>
 
   <main class="chatcol">
@@ -202,14 +224,12 @@ button{cursor:pointer}
       <span class="pagetitle">전체 사용 현황</span>
       <span class="caption" id="conn" role="status">연결 중</span>
       <button class="btn btn--outline btn--xs" id="copy" type="button">링크 복사</button>
-      <select class="input statusbox" id="status" aria-label="내 상태"><option>대화 가능</option><option>업무 중</option><option>회의 중</option><option>자리 비움</option></select>
       <button class="btn btn--outline btn--xs" id="me" type="button">이름 정하기</button>
       <button class="btn btn--ghost btn--xs" id="hide" type="button" title="Esc 키로도 됩니다">숨기기 (Esc)</button>
       <button class="btn btn--outline btn--xs" id="theme" type="button">다크 모드</button>
       <button class="btn btn--ghost iconbtn" id="togglecanvas" type="button" aria-label="캔버스 열기·닫기" aria-pressed="true" title="캔버스 열기·닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="5"/><path d="M14.5 4v16"/></svg></button>
     </header>
     <div class="chatwrap">
-      <div class="people" id="people" aria-label="접속자 상태" aria-live="polite"></div>
       <form class="row" id="nickbar" hidden>
         <input class="input" type="text" id="nick" maxlength="12" placeholder="사용할 이름" aria-label="사용할 이름" autocomplete="off">
         <button class="btn btn--outline" type="submit">저장</button>
@@ -352,17 +372,21 @@ button{cursor:pointer}
   function renderPeople(){
     var box=$("people"); box.textContent="";
     Object.keys(S.people||{}).forEach(function(id){
+      if(id===myId)return;
       var p=S.people[id], label=p.away?"다른 창 보는 중":p.status;
       var color=p.away||p.status==="자리 비움"?"var(--muted-foreground)":p.status==="대화 가능"?"var(--chart-4)":p.status==="회의 중"?"var(--destructive)":"var(--chart-5)";
-      var el=document.createElement("div"); el.className="person";
-      var d=document.createElement("span"); d.className="dot"; d.style.background=color; el.appendChild(d);
-      var n=document.createElement("span"); n.textContent=p.name+(id===myId?" (나)":""); el.appendChild(n);
-      var t=document.createElement("span"); t.className="st"; t.textContent=label; el.appendChild(t);
-      box.appendChild(el);
+      var el=document.createElement("div"); el.className="profile";
+      var av=document.createElement("span"); av.className="avatar"; av.textContent=(p.name||"?").charAt(0); el.appendChild(av);
+      var info=document.createElement("div"); info.className="pinfo";
+      var n=document.createElement("span"); n.textContent=p.name; info.appendChild(n);
+      var st=document.createElement("span"); st.className="pst";
+      var d=document.createElement("span"); d.className="dot"; d.style.background=color; st.appendChild(d);
+      var t=document.createElement("span"); t.textContent=label; st.appendChild(t); info.appendChild(st);
+      el.appendChild(info); box.appendChild(el);
     });
   }
   /* 이름 */
-  function showNick(){$("me").textContent=nick||"이름 정하기";$("nickbar").hidden=!!nick}
+  function showNick(){$("me").textContent=nick||"이름 정하기";$("nickbar").hidden=!!nick;$("mename").textContent=nick||"이름 없음";$("meav").textContent=(nick||"나").charAt(0)}
   function myName(){return nick||"익명"}
   $("me").onclick=function(){$("nickbar").hidden=false;$("nick").value=nick;$("nick").focus()};
   $("nickbar").onsubmit=function(e){
