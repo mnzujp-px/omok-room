@@ -199,6 +199,8 @@ button{cursor:pointer}
   .app.side-closed .side{display:none}
   .app.side-closed #opensidebar{display:inline-flex}
 }
+#log{scrollbar-width:thin;scrollbar-color:transparent transparent}
+#log.scrolling{scrollbar-color:var(--muted-foreground) transparent}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -495,6 +497,13 @@ button{cursor:pointer}
   };
 
   /* 채팅 */
+  (function(){
+    var lg=$("log"), tm=null;
+    lg.addEventListener("scroll",function(){
+      lg.classList.add("scrolling"); clearTimeout(tm);
+      tm=setTimeout(function(){lg.classList.remove("scrolling")},800);
+    },{passive:true});
+  })();
   function emptyBox(title,desc){
     var d=document.createElement("div");d.className="empty";
     var h=document.createElement("h4");h.className="empty__title";h.textContent=title;
