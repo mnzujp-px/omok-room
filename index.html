@@ -211,7 +211,8 @@ button{cursor:pointer}
 .win__name{margin:var(--space-4) 0 0;color:var(--muted-foreground)}
 .namebtn{background:none;border:0;padding:0;text-align:left;font:inherit;letter-spacing:inherit;color:inherit;cursor:pointer}
 .avatar{border:0;cursor:pointer;padding:0}
-.pinfo>:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pinfo>:first-child{overflow:hidden;white-space:nowrap}
+.nrow>span:first-child,.nrow>.namebtn{overflow:hidden;text-overflow:ellipsis}
 .pmenu{position:fixed;inset:auto auto 80px 16px;margin:0;width:232px;padding:var(--space-8);background:var(--background);color:var(--foreground);border:0;border-radius:var(--radius-xl);box-shadow:0 10px 15px -3px rgba(0,0,0,0.25),0 0 0 1px var(--border)}
 .pm__row{display:flex;align-items:center;gap:var(--space-8);padding:var(--space-4)}
 .pm__input{height:32px;padding:0 var(--space-12);font-size:13px;border-radius:var(--radius-full)}
@@ -227,6 +228,8 @@ button{cursor:pointer}
 #conn{display:inline-flex;align-items:center;gap:var(--space-8);margin-right:auto}
 #conn::before{content:"";width:8px;height:8px;border-radius:var(--radius-full);background:var(--muted-foreground)}
 #conn.ok::before{background:var(--chart-4)}
+.nrow{display:flex;align-items:center;gap:var(--space-4);min-width:0}
+.crown{width:14px;height:14px;fill:none;stroke:var(--chart-5);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;display:block}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -252,7 +255,7 @@ button{cursor:pointer}
       <div id="people" aria-label="접속자 상태" aria-live="polite"></div>
       <div class="profile me">
         <button class="avatar" id="meav" type="button" popovertarget="pmenu" aria-label="프로필 메뉴">나</button>
-        <div class="pinfo"><button class="namebtn" id="mename" type="button" popovertarget="pmenu">이름 없음</button>
+        <div class="pinfo"><span class="nrow"><button class="namebtn" id="mename" type="button" popovertarget="pmenu">이름 없음</button><span id="mecrown" hidden><svg class="crown" viewBox="0 0 24 24" aria-label="방장" role="img"><path d="M11.56 3.27a.5.5 0 0 1 .88 0l2.95 5.6a1 1 0 0 0 1.52.3L21.18 5.5a.5.5 0 0 1 .8.52l-2.83 10.25a1 1 0 0 1-.96.73H5.81a1 1 0 0 1-.96-.73L2.02 6.02a.5.5 0 0 1 .8-.52l4.28 3.67a1 1 0 0 0 1.52-.3z"/><path d="M5 21h14"/></svg></span></span>
           <select id="status" class="stsel" aria-label="내 상태"><option>대화 가능</option><option>업무 중</option><option>회의 중</option><option>자리 비움</option></select>
         </div>
       </div>
@@ -463,6 +466,7 @@ button{cursor:pointer}
   document.addEventListener("visibilitychange",function(){setAway(document.hidden||!document.hasFocus())});
   setInterval(function(){var v=document.hidden||!document.hasFocus();if(v!==away)setAway(v)},2000);
   function renderPeople(){
+    $("mecrown").hidden=!isHost;
     var box=$("people"); box.textContent="";
     Object.keys(S.people||{}).forEach(function(id){
       if(id===myId)return;
@@ -471,7 +475,10 @@ button{cursor:pointer}
       var el=document.createElement("div"); el.className="profile";
       var av=document.createElement("span"); av.className="avatar"; av.textContent=(p.name||"?").charAt(0); el.appendChild(av);
       var info=document.createElement("div"); info.className="pinfo";
-      var n=document.createElement("span"); n.textContent=p.name; info.appendChild(n);
+      var nr=document.createElement("span"); nr.className="nrow";
+      var n=document.createElement("span"); n.textContent=p.name; nr.appendChild(n);
+      if(id===HOST_ID){var cw=document.createElement("span"); cw.innerHTML='<svg class="crown" viewBox="0 0 24 24" aria-label="방장" role="img"><path d="M11.56 3.27a.5.5 0 0 1 .88 0l2.95 5.6a1 1 0 0 0 1.52.3L21.18 5.5a.5.5 0 0 1 .8.52l-2.83 10.25a1 1 0 0 1-.96.73H5.81a1 1 0 0 1-.96-.73L2.02 6.02a.5.5 0 0 1 .8-.52l4.28 3.67a1 1 0 0 0 1.52-.3z"/><path d="M5 21h14"/></svg>'; nr.appendChild(cw)}
+      info.appendChild(nr);
       var st=document.createElement("span"); st.className="pst";
       var d=document.createElement("span"); d.className="dot"; d.style.background=color; st.appendChild(d);
       var t=document.createElement("span"); t.textContent=label; st.appendChild(t); info.appendChild(st);
@@ -590,7 +597,7 @@ button{cursor:pointer}
   $("winreset").onclick=function(){$("windlg").close();send({t:"reset"})};
   /* 승리 콘페티 */
   var prevWin="";
-  function confetti(){
+  function confetti(bx,by){
     if(window.matchMedia("(prefers-reduced-motion:reduce)").matches)return;
     var cs=getComputedStyle(document.documentElement);
     var colors=["--chart-1","--chart-4","--chart-5","--destructive","--foreground"].map(function(v){return cs.getPropertyValue(v).trim()||"#888"});
@@ -602,14 +609,20 @@ button{cursor:pointer}
     var dpr=window.devicePixelRatio||1, W=window.innerWidth, H=window.innerHeight;
     cv.width=W*dpr; cv.height=H*dpr; ($("windlg").open?$("windlg"):document.body).appendChild(cv);
     var ctx=cv.getContext("2d"); ctx.scale(dpr,dpr);
-    var ps=[];
-    for(var i=0;i<160;i++){
-      var left=i%2===0;
-      ps.push({x:left?0:W,y:H*0.7,vx:(left?1:-1)*(4+Math.random()*9),vy:-(8+Math.random()*13),
-        w:6+Math.random()*6,h:4+Math.random()*6,r:Math.random()*6.28,vr:(Math.random()-0.5)*0.4,
-        c:colors[i%colors.length]});
+    var ps=[], i, burst=(typeof bx==="number");
+    var n=burst?90:160;
+    for(i=0;i<n;i++){
+      var p={w:6+Math.random()*6,h:4+Math.random()*6,r:Math.random()*6.28,vr:(Math.random()-0.5)*0.4,c:colors[i%colors.length]};
+      if(burst){
+        var ang=Math.random()*6.283, sp=3+Math.random()*9;
+        p.x=bx; p.y=by; p.vx=Math.cos(ang)*sp; p.vy=Math.sin(ang)*sp-4;
+      }else{
+        var left=i%2===0;
+        p.x=left?0:W; p.y=H*0.7; p.vx=(left?1:-1)*(4+Math.random()*9); p.vy=-(8+Math.random()*13);
+      }
+      ps.push(p);
     }
-    var t0=performance.now();
+    var life=burst?2600:3400, t0=performance.now();
     (function frame(now){
       var t=now-t0; ctx.clearRect(0,0,W,H);
       var alive=false;
@@ -617,12 +630,18 @@ button{cursor:pointer}
         p.vy+=0.3; p.vx*=0.99; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr;
         if(p.y<H+20)alive=true;
         ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
-        ctx.globalAlpha=Math.max(0,1-Math.max(0,t-2200)/1200);
+        ctx.globalAlpha=Math.max(0,1-Math.max(0,t-(life-1200))/1200);
         ctx.fillStyle=p.c; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore();
       });
-      if(alive&&t<3400)requestAnimationFrame(frame); else cv.remove();
+      if(alive&&t<life)requestAnimationFrame(frame); else cv.remove();
     })(t0);
   }
+  /* 승리 모달이 열려 있는 동안 바깥을 클릭하면 그 자리에서 콘페티 */
+  $("windlg").addEventListener("click",function(e){
+    var r=$("windlg").getBoundingClientRect();
+    var inside=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+    if(!inside)confetti(e.clientX,e.clientY);
+  });
   /* 오목 */
   var board=$("board"), cellEls=[];
   for(var i=0;i<N*N;i++){
