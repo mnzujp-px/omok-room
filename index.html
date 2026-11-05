@@ -224,6 +224,9 @@ button{cursor:pointer}
 .switch:checked::before{transform:translateX(16px)}
 .switch:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 @media (min-width:1024px){.lt-desk{display:none}.app.side-closed .lt-desk{display:inline-block}}
+#conn{display:inline-flex;align-items:center;gap:var(--space-8);margin-right:auto}
+#conn::before{content:"";width:8px;height:8px;border-radius:var(--radius-full);background:var(--muted-foreground)}
+#conn.ok::before{background:var(--chart-4)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -259,7 +262,6 @@ button{cursor:pointer}
   <main class="chatcol">
     <header class="row">
       <button class="btn btn--ghost iconbtn" id="opensidebar" type="button" aria-label="사이드바 열기" title="사이드바 열기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="5"/><path d="M9.5 4v16"/></svg></button>
-      <span class="pagetitle">전체 사용 현황</span>
       <span class="caption" id="conn" role="status">연결 중</span>
       <button class="btn btn--outline btn--xs" id="copy" type="button">링크 복사</button>
       <button class="btn btn--outline btn--xs lt-desk" id="me" type="button">이름 정하기</button>
@@ -417,10 +419,10 @@ button{cursor:pointer}
   }
 
   /* 연결 */
-  function setConn(t){$("conn").textContent=t}
+  function setConn(t,ok){var c=$("conn");c.textContent=t;c.classList.toggle("ok",!!ok)}
   function startAsHost(){
     peer=new Peer(HOST_ID);
-    peer.on("open",function(id){isHost=true;myId=id;setConn("방장 · 접속 1명 · 링크를 친구에게 보내세요");render();sendPresence()});
+    peer.on("open",function(id){isHost=true;myId=id;setConn("1명 접속 중",true);render();sendPresence()});
     peer.on("connection",function(c){
       c.on("open",function(){conns.push(c);broadcast()});
       c.on("data",function(m){apply(c.peer,m)});
@@ -440,7 +442,7 @@ button{cursor:pointer}
     peer=new Peer();
     peer.on("open",function(id){
       myId=id; hostConn=peer.connect(HOST_ID,{reliable:true});
-      hostConn.on("open",function(){setConn("연결됨");sendPresence()});
+      hostConn.on("open",function(){setConn("연결됨",true);sendPresence()});
       hostConn.on("data",function(m){if(m.t==="state"){S=m.s;if(prevWin===null)prevWin=S.game.winner;render()}});
       hostConn.on("close",function(){setConn("방장이 나갔습니다. 이 링크를 다시 열면 새 방이 열립니다.")});
     });
@@ -746,7 +748,7 @@ button{cursor:pointer}
     if(prevWin!==null){if(!prevWin&&g.winner){showWin(g);confetti()}prevWin=g.winner}
   }
   function render(){
-    if(isHost)setConn("방장 · 접속 "+S.count+"명"+(S.count<2?" · 링크를 친구에게 보내세요":""));
+    if(isHost||(hostConn&&hostConn.open))setConn(S.count+"명 접속 중",true);
     renderChat(); renderGame(); renderPeople();
   }
 
