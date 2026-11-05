@@ -487,12 +487,14 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     var g=S.game; if(g.black&&g.black.id===id)g.black=null; if(g.white&&g.white.id===id)g.white=null;
     conns=conns.filter(function(c){if(c.peer===id){try{c.close()}catch(e){}return false}return true});
   }
+  /* 연결이 이미 끊긴 접속만 목록에서 지운다. 창을 벗어난 탭은 타이머가 느려져도 연결은 살아 있으므로 건드리지 않는다 */
   setInterval(function(){
     if(!isHost)return;
-    var now=Date.now(), changed=false;
+    var changed=false;
     Object.keys(S.people).forEach(function(id){
       if(id===HOST_ID||id===myId)return;
-      var p=S.people[id]; if(p&&p.seen&&now-p.seen>30000){dropPeer(id);changed=true}
+      var alive=conns.some(function(c){return c.peer===id&&c.open});
+      if(!alive){dropPeer(id);changed=true}
     });
     if(changed)broadcast();
   },5000);
