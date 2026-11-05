@@ -472,7 +472,7 @@ button{cursor:pointer}
     btn.disabled=true; st.textContent="보내는 중";
     fetch("https://api.web3forms.com/submit",{
       method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
-      body:JSON.stringify({access_key:CS_KEY,subject:"["+cat+"] 사이트 의견",from_name:$("csname").value.trim()||nick||"익명",분류:cat,message:msg})
+      body:JSON.stringify({access_key:CS_KEY,subject:"["+cat+"] 사이트 의견",from_name:$("csname").value.trim()||nick||"익명",message:"분류: "+cat+"\n\n"+msg})
     }).then(function(r){return r.json()}).then(function(j){
       if(j&&j.success){st.textContent="접수되었습니다. 감사합니다.";$("csmsg").value="";setTimeout(function(){csdlg.close()},1200)}
       else st.textContent="보내지 못했습니다. 잠시 뒤 다시 시도해 주세요.";
