@@ -20,7 +20,7 @@
   --primary:#0d0d0d; --primary-foreground:#ffffff;
   --muted:#f4f4f4; --muted-foreground:#6b6b6b; --accent:#ececec; --card:#f9f9f9;
   --border:rgba(0,0,0,0.08); --input:rgba(0,0,0,0.12); --ring:#0d0d0d;
-  --destructive:#ef4444; --chart-1:#2563eb; --chart-4:#22c55e;
+  --destructive:#ef4444; --chart-1:#2563eb; --chart-5:#f59e0b; --chart-4:#22c55e;
   --glow:rgba(37,99,235,0.25);
   --shadow-1:0 1px 2px rgba(0,0,0,0.05);
   --shadow-glow:0 0 24px var(--glow);
@@ -161,6 +161,11 @@ button{cursor:pointer}
 @media (min-width:1024px){.canvas{margin:var(--space-12) var(--space-12) var(--space-12) 0}}
 #board{border-radius:var(--radius-xl);overflow:hidden}
 .c .s,.ghost,.chip{border-radius:var(--radius-full)}
+.people{display:flex;gap:var(--space-8);flex-wrap:wrap}
+.person{display:flex;align-items:center;gap:var(--space-8);background:var(--muted);padding:var(--space-4) var(--space-12);border-radius:var(--radius-full);font-size:13px}
+.person .dot{width:8px;height:8px;border-radius:var(--radius-full);flex:none}
+.person .st{color:var(--muted-foreground)}
+.statusbox{height:32px;width:auto;flex:none;padding:0 var(--space-8);font-size:13px;border-radius:var(--radius-full)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -186,12 +191,14 @@ button{cursor:pointer}
       <span class="pagetitle">전체 사용 현황</span>
       <span class="caption" id="conn" role="status">연결 중</span>
       <button class="btn btn--outline btn--xs" id="copy" type="button">링크 복사</button>
+      <select class="input statusbox" id="status" aria-label="내 상태"><option>대화 가능</option><option>업무 중</option><option>회의 중</option><option>자리 비움</option></select>
       <button class="btn btn--outline btn--xs" id="me" type="button">이름 정하기</button>
       <button class="btn btn--ghost btn--xs" id="hide" type="button" title="Esc 키로도 됩니다">숨기기 (Esc)</button>
       <button class="btn btn--outline btn--xs" id="theme" type="button">다크 모드</button>
       <button class="btn btn--ghost iconbtn" id="togglecanvas" type="button" aria-label="캔버스 열기·닫기" aria-pressed="true" title="캔버스 열기·닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="5"/><path d="M14.5 4v16"/></svg></button>
     </header>
     <div class="chatwrap">
+      <div class="people" id="people" aria-label="접속자 상태" aria-live="polite"></div>
       <form class="row" id="nickbar" hidden>
         <input class="input" type="text" id="nick" maxlength="12" placeholder="사용할 이름" aria-label="사용할 이름" autocomplete="off">
         <button class="btn btn--outline" type="submit">저장</button>
@@ -246,7 +253,7 @@ button{cursor:pointer}
   var HOST_ID="plusxrm-"+room;
 
   /* 방장이 가진 상태. 손님은 받아서 그리기만 한다 */
-  var S={chat:[],game:blank(),count:1};
+  var S={chat:[],game:blank(),count:1,people:{}};
   var peer=null, isHost=false, conns=[], hostConn=null, myId="";
 
   function blank(){return {cells:Array(N*N+1).join("."),turn:"b",black:null,white:null,winner:"",last:-1,line:""}}
@@ -285,6 +292,8 @@ button{cursor:pointer}
       g.cells=g.cells.slice(0,i)+side+g.cells.slice(i+1);
       var line=winLine(g.cells,i,side);
       g.turn=side==="b"?"w":"b"; g.last=i; g.winner=line?side:""; g.line=line?line.join(","):"";
+    }else if(m.t==="presence"){
+      S.people[from]={name:String(m.name||"익명").slice(0,12),status:String(m.status||"대화 가능").slice(0,8),away:!!m.away};
     }else if(m.t==="reset"){
       var b=g.black,w=g.white; S.game=blank(); S.game.black=b; S.game.white=w;
     }
@@ -299,13 +308,13 @@ button{cursor:pointer}
   function setConn(t){$("conn").textContent=t}
   function startAsHost(){
     peer=new Peer(HOST_ID);
-    peer.on("open",function(id){isHost=true;myId=id;setConn("방장 · 접속 1명 · 링크를 친구에게 보내세요");render()});
+    peer.on("open",function(id){isHost=true;myId=id;setConn("방장 · 접속 1명 · 링크를 친구에게 보내세요");render();sendPresence()});
     peer.on("connection",function(c){
       c.on("open",function(){conns.push(c);broadcast()});
       c.on("data",function(m){apply(c.peer,m)});
       c.on("close",function(){
         conns=conns.filter(function(x){return x!==c});
-        var g=S.game; if(g.black&&g.black.id===c.peer)g.black=null; if(g.white&&g.white.id===c.peer)g.white=null;
+        delete S.people[c.peer]; var g=S.game; if(g.black&&g.black.id===c.peer)g.black=null; if(g.white&&g.white.id===c.peer)g.white=null;
         broadcast();
       });
     });
@@ -318,7 +327,7 @@ button{cursor:pointer}
     peer=new Peer();
     peer.on("open",function(id){
       myId=id; hostConn=peer.connect(HOST_ID,{reliable:true});
-      hostConn.on("open",function(){setConn("연결됨")});
+      hostConn.on("open",function(){setConn("연결됨");sendPresence()});
       hostConn.on("data",function(m){if(m.t==="state"){S=m.s;render()}});
       hostConn.on("close",function(){setConn("방장이 나갔습니다. 이 링크를 다시 열면 새 방이 열립니다.")});
     });
@@ -326,6 +335,26 @@ button{cursor:pointer}
   }
   startAsHost();
 
+  /* 접속자 상태 */
+  var myStatus="대화 가능"; try{myStatus=localStorage.getItem("br-status")||myStatus}catch(e){}
+  function isAway(){return document.hidden||!document.hasFocus()}
+  function sendPresence(){send({t:"presence",name:myName(),status:myStatus,away:isAway()})}
+  var sel=$("status"); sel.value=myStatus;
+  sel.onchange=function(){myStatus=sel.value;try{localStorage.setItem("br-status",myStatus)}catch(e){}sendPresence()};
+  window.addEventListener("focus",sendPresence); window.addEventListener("blur",sendPresence);
+  document.addEventListener("visibilitychange",sendPresence);
+  function renderPeople(){
+    var box=$("people"); box.textContent="";
+    Object.keys(S.people||{}).forEach(function(id){
+      var p=S.people[id], label=p.away?"다른 창 보는 중":p.status;
+      var color=p.away||p.status==="자리 비움"?"var(--muted-foreground)":p.status==="대화 가능"?"var(--chart-4)":p.status==="회의 중"?"var(--destructive)":"var(--chart-5)";
+      var el=document.createElement("div"); el.className="person";
+      var d=document.createElement("span"); d.className="dot"; d.style.background=color; el.appendChild(d);
+      var n=document.createElement("span"); n.textContent=p.name+(id===myId?" (나)":""); el.appendChild(n);
+      var t=document.createElement("span"); t.className="st"; t.textContent=label; el.appendChild(t);
+      box.appendChild(el);
+    });
+  }
   /* 이름 */
   function showNick(){$("me").textContent=nick||"이름 정하기";$("nickbar").hidden=!!nick}
   function myName(){return nick||"익명"}
@@ -334,7 +363,7 @@ button{cursor:pointer}
     e.preventDefault();
     var v=$("nick").value.trim().slice(0,12); if(!v)return;
     nick=v; try{localStorage.setItem("br-nick",nick)}catch(x){}
-    showNick(); $("text").focus();
+    showNick(); sendPresence(); $("text").focus();
   };
   $("copy").onclick=function(){
     var b=$("copy");
@@ -494,7 +523,7 @@ button{cursor:pointer}
   }
   function render(){
     if(isHost)setConn("방장 · 접속 "+S.count+"명"+(S.count<2?" · 링크를 친구에게 보내세요":""));
-    renderChat(); renderGame();
+    renderChat(); renderGame(); renderPeople();
   }
 
   showNick(); render();
