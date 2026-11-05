@@ -40,9 +40,9 @@
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0ms!important;animation-duration:0ms!important}}
 *{box-sizing:border-box;border-radius:0}
 html,body{height:100%;margin:0}
-body{background:var(--background);color:var(--foreground);font-family:var(--font-sans);font-size:14px;line-height:22px;-webkit-font-smoothing:antialiased;padding:0}
+body{background:var(--background);color:var(--foreground);font-family:var(--font-sans);font-size:14px;line-height:22px;-webkit-font-smoothing:antialiased;letter-spacing:-0.025em;padding:0}
 h2{margin:0}
-button,input{font:inherit;color:inherit}
+button,input,select,textarea{font:inherit;letter-spacing:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .container{max-width:1280px;margin:0 auto;height:100%;display:flex;flex-direction:column;gap:var(--space-16);min-height:0}
@@ -93,7 +93,7 @@ button{cursor:pointer}
 .opctl input::-moz-range-thumb{width:12px;height:12px;background:var(--foreground);border:0;border-radius:var(--radius-full)}
 .iconbtn{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--radius-lg)}
 .iconbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8}
-.h4{font-size:18px;line-height:26px;font-weight:600;letter-spacing:-0.015em}
+.h4{font-size:18px;line-height:26px;font-weight:600;letter-spacing:-0.025em}
 #log{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:var(--space-24)}
 .msg{max-width:100%;display:flex;flex-direction:column;gap:var(--space-2);align-self:flex-start}
 .msg.me{align-self:flex-end;align-items:flex-end;max-width:84%}
@@ -124,7 +124,7 @@ button{cursor:pointer}
 .c .s.win{box-shadow:var(--shadow-glow);outline:2px solid var(--chart-1);outline-offset:1px}
 .ghost{position:absolute;inset:30%;background:var(--foreground);opacity:0;z-index:1}
 .c.ok:hover .ghost{opacity:.3}
-#boss{position:fixed;inset:0;background:var(--background);color:var(--foreground);z-index:50;display:flex;flex-direction:column;font-size:13px;line-height:20px;font-family:Arial,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+#boss{position:fixed;inset:0;background:var(--background);color:var(--foreground);z-index:50;display:flex;flex-direction:column;font-size:13px;line-height:20px;font-family:var(--font-sans)}
 #boss .top{padding:var(--space-8) var(--space-16) 0;display:flex;flex-direction:column;gap:var(--space-2)}
 #boss .doc{display:flex;align-items:center;gap:var(--space-12)}
 #boss .doc b{font-size:18px;font-weight:400}
