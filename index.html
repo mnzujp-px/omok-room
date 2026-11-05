@@ -102,6 +102,21 @@ button{cursor:pointer}
 #boss th,#boss td{border-bottom:1px solid var(--border);padding:var(--space-8) var(--space-12);text-align:right}
 #boss th{background:var(--muted);text-align:center;font-weight:600}
 #boss td:first-child{text-align:left;color:var(--muted-foreground)}
+/* 라운드: ChatGPT 기준 */
+:root{--radius-md:8px;--radius-lg:10px;--radius-xl:14px;--radius-2xl:18px;--radius-full:9999px}
+.btn{border-radius:var(--radius-full)}
+.btn--xs{border-radius:var(--radius-full)}
+.input{border-radius:var(--radius-md)}
+.composer{border-radius:var(--radius-full);padding-left:var(--space-20)}
+.composer .input{border-radius:var(--radius-full)}
+.btn--icon{border-radius:var(--radius-full);background:color-mix(in srgb,var(--chart-1) 60%,var(--background));color:var(--background)}
+.side__item{border-radius:var(--radius-lg)}
+.msg.me .bub{border-radius:var(--radius-2xl)}
+.seat{border-radius:var(--radius-lg)}
+.canvas{border-radius:var(--radius-xl)}
+@media (min-width:1024px){.canvas{margin:var(--space-12) var(--space-12) var(--space-12) 0}}
+#board{border-radius:var(--radius-xl);overflow:hidden}
+.c .s,.ghost,.chip{border-radius:var(--radius-full)}
 [hidden]{display:none!important}
 </style>
 </head>
