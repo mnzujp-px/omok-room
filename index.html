@@ -209,6 +209,21 @@ button{cursor:pointer}
 .win__stone.w{background:var(--stone-white);box-shadow:0 0 0 1px var(--stone-edge)}
 .win__title{margin:0;font-size:44px;line-height:52px;font-weight:700;letter-spacing:-0.025em}
 .win__name{margin:var(--space-4) 0 0;color:var(--muted-foreground)}
+.namebtn{background:none;border:0;padding:0;text-align:left;font:inherit;letter-spacing:inherit;color:inherit;cursor:pointer}
+.avatar{border:0;cursor:pointer;padding:0}
+.pinfo>:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmenu{position:fixed;inset:auto auto 80px 16px;margin:0;width:232px;padding:var(--space-8);background:var(--background);color:var(--foreground);border:0;border-radius:var(--radius-xl);box-shadow:0 10px 15px -3px rgba(0,0,0,0.25),0 0 0 1px var(--border)}
+.pm__row{display:flex;align-items:center;gap:var(--space-8);padding:var(--space-4)}
+.pm__input{height:32px;padding:0 var(--space-12);font-size:13px;border-radius:var(--radius-full)}
+.pm__label{justify-content:space-between;padding:var(--space-8) var(--space-12);cursor:pointer;border-radius:var(--radius-lg)}
+.pm__label:hover,.pm__item:hover{background:var(--accent)}
+.pm__item{display:block;width:100%;text-align:left;background:none;border:0;padding:var(--space-8) var(--space-12);border-radius:var(--radius-lg);cursor:pointer}
+.switch{appearance:none;-webkit-appearance:none;position:relative;width:36px;height:20px;margin:0;border-radius:var(--radius-full);background:var(--muted-foreground);cursor:pointer;flex:none;transition:background var(--duration-quick) ease-out}
+.switch::before{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:var(--radius-full);background:#fff;transition:transform var(--duration-quick) ease-out}
+.switch:checked{background:var(--send)}
+.switch:checked::before{transform:translateX(16px)}
+.switch:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+@media (min-width:1024px){.lt-desk{display:none}.app.side-closed .lt-desk{display:inline-block}}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -233,8 +248,8 @@ button{cursor:pointer}
     <div class="profiles">
       <div id="people" aria-label="접속자 상태" aria-live="polite"></div>
       <div class="profile me">
-        <span class="avatar" id="meav">나</span>
-        <div class="pinfo"><span id="mename">이름 없음</span>
+        <button class="avatar" id="meav" type="button" popovertarget="pmenu" aria-label="프로필 메뉴">나</button>
+        <div class="pinfo"><button class="namebtn" id="mename" type="button" popovertarget="pmenu">이름 없음</button>
           <select id="status" class="stsel" aria-label="내 상태"><option>대화 가능</option><option>업무 중</option><option>회의 중</option><option>자리 비움</option></select>
         </div>
       </div>
@@ -247,10 +262,10 @@ button{cursor:pointer}
       <span class="pagetitle">전체 사용 현황</span>
       <span class="caption" id="conn" role="status">연결 중</span>
       <button class="btn btn--outline btn--xs" id="copy" type="button">링크 복사</button>
-      <button class="btn btn--outline btn--xs" id="me" type="button">이름 정하기</button>
-      <button class="btn btn--ghost btn--xs" id="cs" type="button">문의</button>
+      <button class="btn btn--outline btn--xs lt-desk" id="me" type="button">이름 정하기</button>
+      <button class="btn btn--ghost btn--xs lt-desk" id="cs" type="button">문의</button>
       <button class="btn btn--ghost btn--xs" id="hide" type="button" title="Esc 키로도 됩니다">숨기기 (Esc)</button>
-      <button class="btn btn--outline btn--xs" id="theme" type="button">다크 모드</button>
+      <button class="btn btn--outline btn--xs lt-desk" id="theme" type="button">다크 모드</button>
       <button class="btn btn--ghost iconbtn tcv" id="togglecanvas" type="button" aria-label="캔버스 열기·닫기" aria-pressed="true" title="캔버스 열기·닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="5"/><path d="M14.5 4v16"/></svg></button>
     </header>
     <div class="chatwrap">
@@ -284,6 +299,15 @@ button{cursor:pointer}
       <button class="btn btn--outline btn--xs" id="reset" type="button" style="margin-left:auto">새로 시작</button>
     </div>
   </aside>
+</div>
+
+<div id="pmenu" class="pmenu" popover>
+  <form class="pm__row" id="nickform">
+    <input class="input pm__input" type="text" id="nick2" maxlength="12" placeholder="이름" aria-label="이름" autocomplete="off">
+    <button class="btn btn--outline btn--xs" type="submit">저장</button>
+  </form>
+  <label class="pm__row pm__label" for="themeSwitch"><span>다크 모드</span><input type="checkbox" role="switch" id="themeSwitch" class="switch"></label>
+  <button class="pm__item" id="csmenu" type="button">문의 보내기</button>
 </div>
 
 <dialog class="dialog win" id="windlg" aria-labelledby="wintitle">
@@ -605,12 +629,28 @@ button{cursor:pointer}
     b.setAttribute("aria-label",(r+1)+"행 "+(c+1)+"열"); b.dataset.i=i; cellEls.push(b); board.appendChild(b);
   }
   board.addEventListener("click",function(e){var el=e.target.closest(".c");if(el)send({t:"move",i:+el.dataset.i})});
+  function syncThemeUI(){$("themeSwitch").checked=document.documentElement.getAttribute("data-theme")==="dark"}
+  function applyTheme(dark){
+    var d=document.documentElement;
+    if(dark)d.setAttribute("data-theme","dark");else d.removeAttribute("data-theme");
+    try{localStorage.setItem("br-theme",dark?"dark":"light")}catch(e){}
+    themeLabel(); syncThemeUI();
+  }
+  $("themeSwitch").onchange=function(){applyTheme(this.checked)};
+  $("pmenu").addEventListener("toggle",function(e){if(e.newState==="open"){$("nick2").value=nick;syncThemeUI();$("nick2").focus()}});
+  $("nickform").onsubmit=function(e){
+    e.preventDefault();
+    var v=$("nick2").value.trim().slice(0,12); if(!v)return;
+    nick=v; try{localStorage.setItem("br-nick",nick)}catch(x){}
+    showNick(); sendPresence(); $("pmenu").hidePopover();
+  };
+  $("csmenu").onclick=function(){$("pmenu").hidePopover();$("cs").onclick()};
   function themeLabel(){$("theme").textContent=document.documentElement.getAttribute("data-theme")==="dark"?"라이트 모드":"다크 모드"}
   $("theme").onclick=function(){
     var d=document.documentElement, dark=d.getAttribute("data-theme")==="dark";
     if(dark)d.removeAttribute("data-theme");else d.setAttribute("data-theme","dark");
     try{localStorage.setItem("br-theme",dark?"light":"dark")}catch(e){}
-    themeLabel();
+    themeLabel(); syncThemeUI();
   };
   themeLabel();
   function setOpacity(v){
