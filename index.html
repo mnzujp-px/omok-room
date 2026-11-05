@@ -63,7 +63,7 @@ button{cursor:pointer}
 .card--fill{flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--space-16)}
 /* 3단: 사이드바 / 대화 / 캔버스 */
 .app{height:100%;display:grid;grid-template-columns:minmax(0,1fr)}
-@media (min-width:1024px){.app{grid-template-columns:240px minmax(0,1fr) minmax(0,560px)}}
+@media (min-width:1024px){.app{grid-template-columns:240px minmax(0,1fr)}.app.canvas-open{grid-template-columns:240px minmax(0,1fr) minmax(0,560px)}}
 .side{display:none;background:var(--card);padding:var(--space-16);flex-direction:column;gap:var(--space-4);min-height:0}
 @media (min-width:1024px){.side{display:flex}}
 .side__item{padding:var(--space-8) var(--space-12);color:var(--muted-foreground);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -78,8 +78,9 @@ button{cursor:pointer}
 @media (min-width:768px){.chatcol{padding:var(--space-16) var(--space-24)}}
 .chatwrap{flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--space-16);width:100%;max-width:720px;margin:0 auto}
 .canvas{display:none;background:var(--card);padding:var(--space-24);min-height:0;flex-direction:column;gap:var(--space-16)}
-@media (min-width:1024px){.canvas{display:flex}}
-.canvas--open{display:flex}
+.app.canvas-open .canvas{display:flex}
+.iconbtn{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--radius-lg)}
+.iconbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8}
 .h4{font-size:18px;line-height:26px;font-weight:600;letter-spacing:-0.015em}
 #log{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:var(--space-24)}
 .msg{max-width:100%;display:flex;flex-direction:column;gap:var(--space-2);align-self:flex-start}
@@ -111,12 +112,28 @@ button{cursor:pointer}
 .c .s.win{box-shadow:var(--shadow-glow);outline:2px solid var(--chart-1);outline-offset:1px}
 .ghost{position:absolute;inset:30%;background:var(--foreground);opacity:0;z-index:1}
 .c.ok:hover .ghost{opacity:.3}
-#boss{position:fixed;inset:0;background:var(--background);color:var(--foreground);z-index:50;overflow:auto;font-size:13px}
-#boss .bar{background:var(--chart-4);color:var(--primary-foreground);padding:var(--space-8) var(--space-16);font-weight:600;position:sticky;top:0}
-#boss table{border-collapse:collapse;width:100%;min-width:640px}
-#boss th,#boss td{border-bottom:1px solid var(--border);padding:var(--space-8) var(--space-12);text-align:right}
-#boss th{background:var(--muted);text-align:center;font-weight:600}
-#boss td:first-child{text-align:left;color:var(--muted-foreground)}
+#boss{position:fixed;inset:0;background:var(--background);color:var(--foreground);z-index:50;display:flex;flex-direction:column;font-size:13px;line-height:20px;font-family:Arial,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+#boss .top{padding:var(--space-8) var(--space-16) 0;display:flex;flex-direction:column;gap:var(--space-2)}
+#boss .doc{display:flex;align-items:center;gap:var(--space-12)}
+#boss .doc b{font-size:18px;font-weight:400}
+#boss .logo{width:20px;height:26px;background:var(--chart-4);flex:none}
+#boss .menu{display:flex;gap:var(--space-16);color:var(--foreground)}
+#boss .menu span{padding:var(--space-4) var(--space-4)}
+#boss .tool{display:flex;gap:var(--space-16);padding:var(--space-8) var(--space-16);background:var(--muted);color:var(--muted-foreground);margin-top:var(--space-4)}
+#boss .fx{display:flex;align-items:center;border-bottom:1px solid var(--border);border-top:1px solid var(--border)}
+#boss .fx .nm{width:60px;padding:var(--space-4) var(--space-12);border-right:1px solid var(--border);color:var(--muted-foreground)}
+#boss .fx .ft{padding:var(--space-4) var(--space-12);color:var(--muted-foreground)}
+#boss .grid{flex:1;min-height:0;overflow:auto}
+#boss table{border-collapse:collapse;min-width:760px;width:100%}
+#boss th,#boss td{border:1px solid var(--border);padding:0 var(--space-8);height:24px;white-space:nowrap}
+#boss thead th{background:var(--muted);color:var(--muted-foreground);font-weight:400;position:sticky;top:0}
+#boss tbody th{background:var(--muted);color:var(--muted-foreground);font-weight:400;width:40px;text-align:center}
+#boss td.n{text-align:right}
+#boss td.h{font-weight:700;background:var(--accent)}
+#boss td.sel{outline:2px solid var(--chart-1);outline-offset:-2px}
+#boss .tabsbar{display:flex;gap:var(--space-4);padding:var(--space-4) var(--space-16);background:var(--muted);color:var(--muted-foreground);border-top:1px solid var(--border)}
+#boss .tabsbar span{padding:var(--space-4) var(--space-16)}
+#boss .tabsbar .on{background:var(--background);color:var(--chart-4);font-weight:700}
 /* 라운드: ChatGPT 기준 */
 :root{--radius-md:8px;--radius-lg:10px;--radius-xl:14px;--radius-2xl:18px;--radius-full:9999px}
 .btn{border-radius:var(--radius-full)}
@@ -160,7 +177,7 @@ button{cursor:pointer}
       <button class="btn btn--outline btn--xs" id="me" type="button">이름 정하기</button>
       <button class="btn btn--ghost btn--xs" id="hide" type="button" title="Esc 키로도 됩니다">숨기기 (Esc)</button>
       <button class="btn btn--outline btn--xs" id="theme" type="button">다크 모드</button>
-      <button class="btn btn--outline btn--xs" id="togglecanvas" type="button">캔버스 열기</button>
+      <button class="btn btn--ghost iconbtn" id="togglecanvas" type="button" aria-label="캔버스 열기·닫기" aria-pressed="true" title="캔버스 열기·닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="5"/><path d="M14.5 4v16"/></svg></button>
     </header>
     <div class="chatwrap">
       <form class="row" id="nickbar" hidden>
@@ -190,8 +207,14 @@ button{cursor:pointer}
 </div>
 
 <div id="boss" hidden>
-  <div class="bar">2026 4분기 운영 현황.xlsx</div>
-  <div style="overflow-x:auto"><table id="bosstable"></table></div>
+  <div class="top">
+    <div class="doc"><span class="logo"></span><b>2026 4분기 운영 현황</b></div>
+    <div class="menu"><span>파일</span><span>수정</span><span>보기</span><span>삽입</span><span>서식</span><span>데이터</span><span>도구</span><span>확장 프로그램</span><span>도움말</span></div>
+  </div>
+  <div class="tool"><span>100%</span><span>₩</span><span>%</span><span>.0</span><span>기본값</span><span>10</span><span><b>B</b></span><span><i>I</i></span></div>
+  <div class="fx"><span class="nm">A1</span><span class="ft">fx</span><span class="ft" id="fxtext">항목</span></div>
+  <div class="grid"><table id="bosstable"></table></div>
+  <div class="tabsbar"><span class="on">운영 현황</span><span>광고비</span><span>외주 내역</span><span>메모</span></div>
 </div>
 
 <script>
@@ -302,13 +325,24 @@ button{cursor:pointer}
     else done("주소창에서 복사");
   };
 
-  /* 숨기기 */
+  /* 숨기기: 스프레드시트 화면 */
   (function(){
-    var rows=[["항목","10월","11월","12월","합계"],["운영비",1240,1310,1275],["광고비",3800,4120,5200],["제작비",2650,2410,2980],["외주비",1900,2200,2050],["기타",420,380,510]],h="";
-    rows.forEach(function(r,i){
-      h+="<tr>"+r.map(function(c){return i===0?"<th>"+c+"</th>":"<td>"+(typeof c==="number"?c.toLocaleString():c)+"</td>"}).join("")+(i>0?"<td>"+(r[1]+r[2]+r[3]).toLocaleString()+"</td>":"")+"</tr>";
+    var head=["항목","10월","11월","12월","합계","전월 대비","비고"];
+    var data=[["운영비",1240,1310,1275,"검토 완료"],["광고비",3800,4120,5200,"12월 증액"],["제작비",2650,2410,2980,""],["외주비",1900,2200,2050,"견적 재확인"],["인건비",5200,5200,5350,""],["기타",420,380,510,""]];
+    var cols="ABCDEFG", h="<thead><tr><th></th>";
+    for(var c=0;c<7;c++)h+="<th>"+cols[c]+"</th>"; h+="</tr></thead><tbody>";
+    function fmt(n){return n.toLocaleString()}
+    h+="<tr><th>1</th>"+head.map(function(t,k){return '<td class="h'+(k===0?' sel':'')+'">'+t+"</td>"}).join("")+"</tr>";
+    var tot=[0,0,0];
+    data.forEach(function(r,i){
+      var sum=r[1]+r[2]+r[3], diff=Math.round((r[3]-r[2])/r[2]*1000)/10;
+      tot[0]+=r[1];tot[1]+=r[2];tot[2]+=r[3];
+      h+="<tr><th>"+(i+2)+"</th><td>"+r[0]+'</td><td class="n">'+fmt(r[1])+'</td><td class="n">'+fmt(r[2])+'</td><td class="n">'+fmt(r[3])+'</td><td class="n">'+fmt(sum)+'</td><td class="n">'+(diff>0?"+":"")+diff+"%</td><td>"+r[4]+"</td></tr>";
     });
-    $("bosstable").innerHTML=h;
+    var rn=data.length+2, ts=tot[0]+tot[1]+tot[2], td=Math.round((tot[2]-tot[1])/tot[1]*1000)/10;
+    h+="<tr><th>"+rn+'</th><td class="h">합계</td><td class="n h">'+fmt(tot[0])+'</td><td class="n h">'+fmt(tot[1])+'</td><td class="n h">'+fmt(tot[2])+'</td><td class="n h">'+fmt(ts)+'</td><td class="n h">'+(td>0?"+":"")+td+'%</td><td class="h"></td></tr>';
+    for(var r2=rn+1;r2<=rn+14;r2++){h+="<tr><th>"+r2+"</th>"+"<td></td>".repeat(7)+"</tr>"}
+    $("bosstable").innerHTML=h+"</tbody>";
   })();
   function toggleBoss(show){$("boss").hidden=!show}
   $("hide").onclick=function(){toggleBoss(true)};
@@ -356,7 +390,16 @@ button{cursor:pointer}
     themeLabel();
   };
   themeLabel();
-  $("togglecanvas").onclick=function(){var c=$("canvas").classList.toggle("canvas--open");$("togglecanvas").textContent=c?"캔버스 닫기":"캔버스 열기"};
+  var appEl=document.querySelector(".app");
+  function setCanvas(open){
+    appEl.classList.toggle("canvas-open",open);
+    $("togglecanvas").setAttribute("aria-pressed",open);
+    try{localStorage.setItem("br-canvas",open?"1":"0")}catch(e){}
+  }
+  var wide=window.matchMedia("(min-width:1024px)").matches, saved=null;
+  try{saved=localStorage.getItem("br-canvas")}catch(e){}
+  setCanvas(saved===null?wide:saved==="1"&&true);
+  $("togglecanvas").onclick=function(){setCanvas(!appEl.classList.contains("canvas-open"))};
   $("reset").onclick=function(){send({t:"reset"})};
   function mySide(){
     var g=S.game;
