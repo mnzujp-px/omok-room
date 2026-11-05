@@ -166,13 +166,12 @@ button{cursor:pointer}
 .person .dot{width:8px;height:8px;border-radius:var(--radius-full);flex:none}
 .person .st{color:var(--muted-foreground)}
 .statusbox{height:32px;width:auto;flex:none;padding:0 var(--space-8);font-size:13px;border-radius:var(--radius-full)}
-.opfloat{position:fixed;right:12px;top:12px;z-index:20;flex-direction:row;gap:var(--space-8);padding:var(--space-4) var(--space-12);background:var(--card);box-shadow:var(--shadow-1),0 0 0 1px var(--border);border-radius:var(--radius-full);align-items:center;opacity:.85;height:32px}
+.opfloat{position:absolute;right:var(--space-16);top:var(--space-12);z-index:20;flex-direction:row;gap:var(--space-8);padding:var(--space-4) var(--space-12);background:var(--card);box-shadow:var(--shadow-1),0 0 0 1px var(--border);border-radius:var(--radius-full);align-items:center;opacity:.85;height:32px}
 .opfloat:hover,.opfloat:focus-within{opacity:1}
 .opfloat .caption{font-size:11px;line-height:14px;min-width:28px;text-align:right}
 .opbox{width:80px;height:16px;display:flex;align-items:center}
 .opbox input{width:100%}
-.chatcol>header{padding-right:176px}
-@media (min-width:1024px){.app.canvas-open .chatcol>header{padding-right:0}.app.canvas-open .canvas{padding-top:var(--space-48)}}
+.canvas{padding-top:var(--space-48)}
 .profiles{margin-top:auto;display:flex;flex-direction:column;gap:var(--space-4);padding-top:var(--space-16)}
 #people{display:flex;flex-direction:column;gap:var(--space-4)}
 .profile{display:flex;align-items:center;gap:var(--space-12);padding:var(--space-8) var(--space-12);border-radius:var(--radius-lg);min-width:0}
@@ -188,12 +187,6 @@ button{cursor:pointer}
 </style>
 </head>
 <body>
-<div class="opctl opfloat" role="group" aria-label="캔버스 투명도">
-  <label for="opacity" class="caption">투명도</label>
-  <div class="opbox"><input type="range" id="opacity" min="10" max="100" step="5" value="100" aria-label="캔버스 투명도"></div>
-  <span class="caption" id="opval">100%</span>
-</div>
-
 <div class="app">
   <nav class="side" aria-label="대화 목록">
     <div class="side__title">ChatGPT</div>
@@ -245,6 +238,11 @@ button{cursor:pointer}
 
   <aside class="canvas" id="canvas" aria-labelledby="h-game">
     <div class="resizer" id="resizer" role="separator" aria-orientation="vertical" aria-label="캔버스 너비 조절" tabindex="0"></div>
+    <div class="opctl opfloat" role="group" aria-label="캔버스 투명도">
+      <label for="opacity" class="caption">투명도</label>
+      <div class="opbox"><input type="range" id="opacity" min="10" max="100" step="5" value="100" aria-label="캔버스 투명도"></div>
+      <span class="caption" id="opval">100%</span>
+    </div>
     <div class="row">
       <h2 class="h4" id="h-game" style="margin-right:auto">캔버스</h2>
       <div class="row" id="seats"></div>
