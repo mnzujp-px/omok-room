@@ -467,12 +467,35 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       var line=winLine(g.cells,i,side);
       g.turn=side==="b"?"w":"b"; g.last=i; g.winner=line?side:""; g.line=line?line.join(","):"";
     }else if(m.t==="presence"){
-      S.people[from]={name:String(m.name||"익명").slice(0,12),status:String(m.status||"대화 가능").slice(0,8),away:!!m.away};
+      var cid=String(m.cid||"").slice(0,24), nm=String(m.name||"익명").slice(0,12);
+      /* 같은 사람이 새로고침으로 다시 들어오면 예전 접속은 지우고 앉아 있던 자리는 새 접속으로 옮긴다 */
+      if(cid)Object.keys(S.people).forEach(function(old){
+        if(old!==from&&old!==HOST_ID&&S.people[old]&&S.people[old].cid===cid){
+          if(g.black&&g.black.id===old)g.black={id:from,name:nm};
+          if(g.white&&g.white.id===old)g.white={id:from,name:nm};
+          dropPeer(old);
+        }
+      });
+      S.people[from]={name:nm,status:String(m.status||"대화 가능").slice(0,8),away:!!m.away,cid:cid,seen:Date.now()};
     }else if(m.t==="reset"){
       var b=g.black,w=g.white; S.game=blank(); S.game.black=b; S.game.white=w;
     }
     broadcast();
   }
+  function dropPeer(id){
+    delete S.people[id];
+    var g=S.game; if(g.black&&g.black.id===id)g.black=null; if(g.white&&g.white.id===id)g.white=null;
+    conns=conns.filter(function(c){if(c.peer===id){try{c.close()}catch(e){}return false}return true});
+  }
+  setInterval(function(){
+    if(!isHost)return;
+    var now=Date.now(), changed=false;
+    Object.keys(S.people).forEach(function(id){
+      if(id===HOST_ID||id===myId)return;
+      var p=S.people[id]; if(p&&p.seen&&now-p.seen>30000){dropPeer(id);changed=true}
+    });
+    if(changed)broadcast();
+  },5000);
   function send(m){
     if(isHost)apply(myId,m);
     else if(hostConn&&hostConn.open)hostConn.send(m);
@@ -515,7 +538,9 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
   var away=document.hidden||!document.hasFocus();
   function isAway(){return away}
   function setAway(v){if(away===v)return;away=v;sendPresence()}
-  function sendPresence(){send({t:"presence",name:myName(),status:myStatus,away:isAway()})}
+  var CID=""; try{CID=sessionStorage.getItem("br-cid")||"";if(!CID){CID=Math.random().toString(36).slice(2,12);sessionStorage.setItem("br-cid",CID)}}catch(e){CID=Math.random().toString(36).slice(2,12)}
+  function sendPresence(){send({t:"presence",name:myName(),status:myStatus,away:isAway(),cid:CID})}
+  setInterval(function(){if(!isHost&&hostConn&&hostConn.open)sendPresence()},8000);
   var sel=$("status"); sel.value=myStatus;
   sel.onchange=function(){myStatus=sel.value;try{localStorage.setItem("br-status",myStatus)}catch(e){}sendPresence()};
   window.addEventListener("focus",function(){setAway(document.hidden)});
