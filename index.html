@@ -180,6 +180,15 @@ button{cursor:pointer}
 .opctl input::-moz-range-thumb{width:12px;height:12px;background:var(--muted-foreground);border:0;border-radius:var(--radius-full)}
 .opctl input:hover::-webkit-slider-thumb{background:var(--foreground)}
 .opctl input:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.dialog{width:min(480px,calc(100vw - 32px));background:var(--background);color:var(--foreground);border:0;border-radius:var(--radius-2xl);padding:var(--space-24);box-shadow:0 10px 15px -3px rgba(0,0,0,0.25),0 4px 6px -4px rgba(0,0,0,0.25)}
+.dialog::backdrop{background:rgba(0,0,0,0.5)}
+.seg{display:flex;flex-wrap:wrap;gap:var(--space-8);border:0;padding:0;margin:0 0 var(--space-12)}
+.seg label{cursor:pointer}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg span{display:inline-block;padding:var(--space-6,6px) var(--space-12);border-radius:var(--radius-full);background:var(--muted);color:var(--muted-foreground);font-size:13px}
+.seg input:checked+span{background:var(--primary);color:var(--primary-foreground)}
+.seg input:focus-visible+span{outline:2px solid var(--ring);outline-offset:2px}
+.input--textarea{display:block;width:100%;height:auto;min-height:96px;padding:var(--space-12);resize:vertical;line-height:22px}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -215,6 +224,7 @@ button{cursor:pointer}
       <span class="caption" id="conn" role="status">연결 중</span>
       <button class="btn btn--outline btn--xs" id="copy" type="button">링크 복사</button>
       <button class="btn btn--outline btn--xs" id="me" type="button">이름 정하기</button>
+      <button class="btn btn--ghost btn--xs" id="cs" type="button">문의</button>
       <button class="btn btn--ghost btn--xs" id="hide" type="button" title="Esc 키로도 됩니다">숨기기 (Esc)</button>
       <button class="btn btn--outline btn--xs" id="theme" type="button">다크 모드</button>
       <button class="btn btn--ghost iconbtn" id="togglecanvas" type="button" aria-label="캔버스 열기·닫기" aria-pressed="true" title="캔버스 열기·닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="5"/><path d="M14.5 4v16"/></svg></button>
@@ -250,6 +260,28 @@ button{cursor:pointer}
     </div>
   </aside>
 </div>
+
+<dialog class="dialog" id="csdlg" aria-labelledby="cs-title">
+  <form id="csform" method="dialog" novalidate>
+    <h2 class="h4" id="cs-title">의견 보내기</h2>
+    <p class="caption" style="margin:var(--space-4) 0 var(--space-16)">한 줄이어도 괜찮아요. 개인정보나 비밀번호는 적지 마세요.</p>
+    <fieldset class="seg" aria-label="분류">
+      <label><input type="radio" name="cat" value="문의" checked><span>문의</span></label>
+      <label><input type="radio" name="cat" value="게임 제안"><span>게임 제안</span></label>
+      <label><input type="radio" name="cat" value="기능 추가"><span>기능 추가</span></label>
+      <label><input type="radio" name="cat" value="응원"><span>응원</span></label>
+      <label><input type="radio" name="cat" value="기타"><span>기타</span></label>
+    </fieldset>
+    <textarea class="input input--textarea" id="csmsg" maxlength="500" placeholder="내용을 입력하세요" aria-label="내용"></textarea>
+    <input class="input" type="text" id="csname" maxlength="20" placeholder="이름 (선택)" aria-label="이름" autocomplete="off" style="margin-top:var(--space-8)">
+    <input type="text" id="cshp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px">
+    <p class="caption" id="csstatus" role="status" style="min-height:16px;margin:var(--space-8) 0 var(--space-12)"></p>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn btn--outline" type="button" id="csclose">닫기</button>
+      <button class="btn" type="submit" id="cssend">보내기</button>
+    </div>
+  </form>
+</dialog>
 
 <div id="boss" hidden>
   <div class="top">
@@ -422,7 +454,30 @@ button{cursor:pointer}
   function toggleBoss(show){$("boss").hidden=!show}
   $("hide").onclick=function(){toggleBoss(true)};
   $("boss").onclick=function(){toggleBoss(false)};
-  document.addEventListener("keydown",function(e){if(e.key==="Escape")toggleBoss($("boss").hidden)});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("csdlg").open)toggleBoss($("boss").hidden)});
+
+  /* 문의: FormSubmit으로 메일 전달. 받는 주소를 CS_TARGET에 넣으면 켜진다 */
+  var CS_TARGET="";
+  var csdlg=$("csdlg");
+  $("cs").onclick=function(){$("csstatus").textContent="";csdlg.showModal();$("csmsg").focus()};
+  $("csclose").onclick=function(){csdlg.close()};
+  csdlg.addEventListener("click",function(e){if(e.target===csdlg)csdlg.close()});
+  $("csform").onsubmit=function(e){
+    e.preventDefault();
+    var msg=$("csmsg").value.trim(), st=$("csstatus"), btn=$("cssend");
+    if(!msg){st.textContent="내용을 입력해 주세요.";return}
+    if($("cshp").value)return;
+    if(!CS_TARGET){st.textContent="문의 받는 주소가 아직 설정되지 않았습니다.";return}
+    var cat=document.querySelector('input[name="cat"]:checked').value;
+    btn.disabled=true; st.textContent="보내는 중";
+    fetch("https://formsubmit.co/ajax/"+CS_TARGET,{
+      method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({_subject:"["+cat+"] 사이트 의견",_template:"table",_captcha:"false",분류:cat,내용:msg,이름:$("csname").value.trim()||nick||"익명"})
+    }).then(function(r){return r.json()}).then(function(j){
+      if(j&&(j.success===true||j.success==="true")){st.textContent="접수되었습니다. 감사합니다.";$("csmsg").value="";setTimeout(function(){csdlg.close()},1200)}
+      else st.textContent="보내지 못했습니다. 잠시 뒤 다시 시도해 주세요.";
+    }).catch(function(){st.textContent="네트워크 오류로 보내지 못했습니다."}).then(function(){btn.disabled=false});
+  };
 
   /* 채팅 */
   function emptyBox(title,desc){
