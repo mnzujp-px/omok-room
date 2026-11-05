@@ -95,7 +95,8 @@ button{cursor:pointer}
 .msg.me .bub{background:var(--muted);padding:var(--space-8) var(--space-16)}
 .composer{background:var(--background);box-shadow:inset 0 0 0 1px var(--input),var(--shadow-1);padding:var(--space-8) var(--space-8) var(--space-8) var(--space-16);display:flex;gap:var(--space-8);align-items:center}
 .composer .input{border:0;height:40px}
-.btn--icon{width:40px;height:40px;padding:0}
+.btn--icon{width:40px;height:40px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.btn--icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .empty{margin:auto;text-align:center;color:var(--muted-foreground);padding:var(--space-24)}
 .empty__title{color:var(--foreground);font-weight:600;font-size:18px;line-height:26px;margin:0 0 var(--space-4)}
 .empty p{margin:0}
@@ -226,7 +227,7 @@ button{cursor:pointer}
       <div id="log" aria-live="polite"></div>
       <form class="composer" id="composer">
         <input class="input" type="text" id="text" maxlength="500" placeholder="무엇이든 물어보세요" aria-label="메시지" autocomplete="off">
-        <button class="btn btn--icon" type="submit" aria-label="보내기">↑</button>
+        <button class="btn btn--icon" type="submit" aria-label="보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg></button>
       </form>
       <p class="caption footnote">실수할 수 있습니다. 중요한 정보는 확인하세요.</p>
     </div>
@@ -356,12 +357,16 @@ button{cursor:pointer}
 
   /* 접속자 상태 */
   var myStatus="대화 가능"; try{myStatus=localStorage.getItem("br-status")||myStatus}catch(e){}
-  function isAway(){return document.hidden||!document.hasFocus()}
+  var away=document.hidden||!document.hasFocus();
+  function isAway(){return away}
+  function setAway(v){if(away===v)return;away=v;sendPresence()}
   function sendPresence(){send({t:"presence",name:myName(),status:myStatus,away:isAway()})}
   var sel=$("status"); sel.value=myStatus;
   sel.onchange=function(){myStatus=sel.value;try{localStorage.setItem("br-status",myStatus)}catch(e){}sendPresence()};
-  window.addEventListener("focus",sendPresence); window.addEventListener("blur",sendPresence);
-  document.addEventListener("visibilitychange",sendPresence);
+  window.addEventListener("focus",function(){setAway(document.hidden)});
+  window.addEventListener("blur",function(){setAway(true)});
+  document.addEventListener("visibilitychange",function(){setAway(document.hidden||!document.hasFocus())});
+  setInterval(function(){var v=document.hidden||!document.hasFocus();if(v!==away)setAway(v)},2000);
   function renderPeople(){
     var box=$("people"); box.textContent="";
     Object.keys(S.people||{}).forEach(function(id){
