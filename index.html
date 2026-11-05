@@ -85,12 +85,6 @@ button{cursor:pointer}
 .resizer::after{content:"";position:absolute;left:5px;top:50%;width:3px;height:40px;margin-top:-20px;background:var(--border);border-radius:var(--radius-full)}
 .resizer:hover::after,.resizer:focus-visible::after,.resizer.drag::after{background:var(--muted-foreground)}
 @media (min-width:1024px){.resizer{display:block}}
-.opctl{display:flex;align-items:center;gap:var(--space-12);color:var(--muted-foreground)}
-.opctl input{flex:1;min-width:0;-webkit-appearance:none;appearance:none;height:16px;background:transparent;cursor:pointer;margin:0}
-.opctl input::-webkit-slider-runnable-track{height:1px;background:var(--muted-foreground)}
-.opctl input::-moz-range-track{height:1px;background:var(--muted-foreground)}
-.opctl input::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;margin-top:-5.5px;background:var(--foreground);border:0;border-radius:var(--radius-full)}
-.opctl input::-moz-range-thumb{width:12px;height:12px;background:var(--foreground);border:0;border-radius:var(--radius-full)}
 .iconbtn{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--radius-lg)}
 .iconbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8}
 .h4{font-size:18px;line-height:26px;font-weight:600;letter-spacing:-0.025em}
@@ -166,12 +160,6 @@ button{cursor:pointer}
 .person .dot{width:8px;height:8px;border-radius:var(--radius-full);flex:none}
 .person .st{color:var(--muted-foreground)}
 .statusbox{height:32px;width:auto;flex:none;padding:0 var(--space-8);font-size:13px;border-radius:var(--radius-full)}
-.opfloat{position:absolute;right:var(--space-16);top:var(--space-12);z-index:20;flex-direction:row;gap:var(--space-8);padding:var(--space-4) var(--space-12);background:var(--card);box-shadow:var(--shadow-1),0 0 0 1px var(--border);border-radius:var(--radius-full);align-items:center;opacity:.85;height:32px}
-.opfloat:hover,.opfloat:focus-within{opacity:1}
-.opfloat .caption{font-size:11px;line-height:14px;min-width:28px;text-align:right}
-.opbox{width:80px;height:16px;display:flex;align-items:center}
-.opbox input{width:100%}
-.canvas{padding-top:var(--space-48)}
 .profiles{margin-top:auto;display:flex;flex-direction:column;gap:var(--space-4);padding-top:var(--space-16)}
 #people{display:flex;flex-direction:column;gap:var(--space-4)}
 .profile{display:flex;align-items:center;gap:var(--space-12);padding:var(--space-8) var(--space-12);border-radius:var(--radius-lg);min-width:0}
@@ -183,6 +171,14 @@ button{cursor:pointer}
 .pst .dot{width:8px;height:8px;border-radius:var(--radius-full);flex:none}
 .stsel{background:transparent;border:0;padding:0;color:var(--muted-foreground);font-size:12px;cursor:pointer;max-width:100%}
 .stsel:focus-visible{outline:2px solid var(--ring)}
+.opctl{display:flex;justify-content:flex-end;align-items:center;margin:calc(var(--space-8) * -1) 0 calc(var(--space-4) * -1)}
+.opctl input{width:96px;height:16px;margin:0;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
+.opctl input::-webkit-slider-runnable-track{height:2px;background:linear-gradient(to right,var(--muted-foreground) var(--p,100%),var(--input) var(--p,100%))}
+.opctl input::-moz-range-track{height:2px;background:linear-gradient(to right,var(--muted-foreground) var(--p,100%),var(--input) var(--p,100%))}
+.opctl input::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;margin-top:-5px;background:var(--muted-foreground);border:0;border-radius:var(--radius-full)}
+.opctl input::-moz-range-thumb{width:12px;height:12px;background:var(--muted-foreground);border:0;border-radius:var(--radius-full)}
+.opctl input:hover::-webkit-slider-thumb{background:var(--foreground)}
+.opctl input:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -238,10 +234,9 @@ button{cursor:pointer}
 
   <aside class="canvas" id="canvas" aria-labelledby="h-game">
     <div class="resizer" id="resizer" role="separator" aria-orientation="vertical" aria-label="캔버스 너비 조절" tabindex="0"></div>
-    <div class="opctl opfloat" role="group" aria-label="캔버스 투명도">
-      <label for="opacity" class="caption">투명도</label>
-      <div class="opbox"><input type="range" id="opacity" min="10" max="100" step="5" value="100" aria-label="캔버스 투명도"></div>
-      <span class="caption" id="opval">100%</span>
+    <div class="opctl" role="group" aria-label="캔버스 투명도">
+      <input type="range" id="opacity" min="10" max="100" step="5" value="100" aria-label="캔버스 투명도" title="투명도">
+      <span id="opval" hidden>100%</span>
     </div>
     <div class="row">
       <h2 class="h4" id="h-game" style="margin-right:auto">캔버스</h2>
@@ -468,7 +463,7 @@ button{cursor:pointer}
   function setOpacity(v){
     v=Math.max(10,Math.min(100,+v||100));
     $("canvas").style.setProperty("--cv",v/100);
-    $("opacity").value=v; $("opval").textContent=v+"%";
+    $("opacity").value=v; $("opval").textContent=v+"%"; $("opacity").style.setProperty("--p",((v-10)/90*100)+"%");
     try{localStorage.setItem("br-opacity",v)}catch(e){}
   }
   $("opacity").oninput=function(){setOpacity(this.value)};
