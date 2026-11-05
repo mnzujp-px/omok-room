@@ -682,7 +682,6 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     ta.addEventListener("keydown",function(e){
       if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("composer").requestSubmit()}
     });
-    new MutationObserver(fit).observe(ta,{attributes:true});
     $("composer").addEventListener("submit",function(){setTimeout(fit,0)});
   })();
   $("composer").onsubmit=function(e){
