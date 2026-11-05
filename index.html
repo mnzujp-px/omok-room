@@ -301,7 +301,8 @@ button{cursor:pointer}
     <div id="boardwrap"><div id="board"></div></div>
     <div class="row">
       <span class="text-muted" id="gamestatus"></span>
-      <button class="btn btn--outline btn--xs" id="reset" type="button" style="margin-left:auto">새로 시작</button>
+      <button class="btn btn--outline btn--xs" id="solo" type="button" style="margin-left:auto">AI와 대결</button>
+      <button class="btn btn--outline btn--xs" id="reset" type="button">새로 시작</button>
     </div>
   </aside>
 </div>
@@ -594,7 +595,7 @@ button{cursor:pointer}
     if(!$("windlg").open)$("windlg").showModal();
   }
   $("winclose").onclick=function(){$("windlg").close()};
-  $("winreset").onclick=function(){$("windlg").close();send({t:"reset"})};
+  $("winreset").onclick=function(){$("windlg").close();resetGame()};
   /* 승리 콘페티 */
   var prevWin="";
   function confetti(bx,by){
@@ -649,7 +650,7 @@ button{cursor:pointer}
     b.type="button"; b.className="c"+(r===0?" top":"")+(r===N-1?" bot":"")+(c===0?" lft":"")+(c===N-1?" rgt":"");
     b.setAttribute("aria-label",(r+1)+"행 "+(c+1)+"열"); b.dataset.i=i; cellEls.push(b); board.appendChild(b);
   }
-  board.addEventListener("click",function(e){var el=e.target.closest(".c");if(el)send({t:"move",i:+el.dataset.i})});
+  board.addEventListener("click",function(e){var el=e.target.closest(".c");if(el){if(solo)soloMove(+el.dataset.i);else send({t:"move",i:+el.dataset.i})}});
   function syncThemeUI(){$("themeSwitch").checked=document.documentElement.getAttribute("data-theme")==="dark"}
   function applyTheme(dark){
     var d=document.documentElement;
@@ -722,15 +723,88 @@ button{cursor:pointer}
   try{saved=localStorage.getItem("br-canvas")}catch(e){}
   setCanvas(saved===null?wide:saved==="1"&&true);
   document.querySelectorAll(".tcv").forEach(function(b){b.onclick=function(){setCanvas(!appEl.classList.contains("canvas-open"))}});
-  $("reset").onclick=function(){send({t:"reset"})};
+  $("reset").onclick=function(){resetGame()};
+  /* AI와 대결: 내 브라우저에서만 진행, 방에는 영향 없음 */
+  var solo=null;
+  function cur(){return solo||S.game}
+  function soloNew(){return {cells:Array(N*N+1).join("."),turn:"b",black:{id:"me",name:myName()},white:{id:"ai",name:"AI"},winner:"",last:-1,line:""}}
+  function placeSolo(i,side){
+    solo.cells=solo.cells.slice(0,i)+side+solo.cells.slice(i+1);
+    var line=winLine(solo.cells,i,side);
+    solo.last=i; solo.turn=side==="b"?"w":"b";
+    if(line){solo.winner=side;solo.line=line.join(",")}
+  }
+  function soloMove(i){
+    if(!solo||solo.winner||solo.turn!=="b"||solo.cells[i]!==".")return;
+    placeSolo(i,"b"); renderGame();
+    if(!solo.winner)setTimeout(aiMove,450);
+  }
+  function aiMove(){
+    if(!solo||solo.winner||solo.turn!=="w")return;
+    var i=pickAi(solo.cells); if(i<0)return;
+    placeSolo(i,"w"); renderGame();
+  }
+  function patScore(count,open){
+    if(count>=5)return 100000;
+    if(open===0)return 0;
+    if(count===4)return open===2?10000:1000;
+    if(count===3)return open===2?1000:100;
+    if(count===2)return open===2?100:10;
+    return open===2?10:1;
+  }
+  function scoreCell(cells,i,p){
+    var r=Math.floor(i/N),c=i%N,dirs=[[0,1],[1,0],[1,1],[1,-1]],total=0;
+    for(var d=0;d<4;d++){
+      var dr=dirs[d][0],dc=dirs[d][1],count=1,open=0,k,rr,cc;
+      for(k=1;;k++){rr=r+dr*k;cc=c+dc*k;if(rr<0||rr>=N||cc<0||cc>=N)break;var v=cells[rr*N+cc];if(v===p){count++;continue}if(v===".")open++;break}
+      for(k=1;;k++){rr=r-dr*k;cc=c-dc*k;if(rr<0||rr>=N||cc<0||cc>=N)break;var w=cells[rr*N+cc];if(w===p){count++;continue}if(w===".")open++;break}
+      total+=patScore(count,open);
+    }
+    return total;
+  }
+  function pickAi(cells){
+    var any=false,best=-1,bestScore=-1;
+    for(var i=0;i<N*N;i++){
+      if(cells[i]!==".")continue;
+      var r=Math.floor(i/N),c=i%N,near=false;
+      for(var dr=-2;dr<=2&&!near;dr++)for(var dc=-2;dc<=2;dc++){
+        var rr=r+dr,cc=c+dc; if(rr<0||rr>=N||cc<0||cc>=N)continue;
+        if(cells[rr*N+cc]!=="."){near=true;break}
+      }
+      if(!near)continue; any=true;
+      var sc=scoreCell(cells,i,"w")*1.0+scoreCell(cells,i,"b")*0.95+(14-Math.abs(r-7)-Math.abs(c-7))*0.1+Math.random()*0.5;
+      if(sc>bestScore){bestScore=sc;best=i}
+    }
+    if(!any){var mid=7*N+7;return cells[mid]==="."?mid:cells.indexOf(".")}
+    return best;
+  }
+  function resetGame(){
+    if(solo){solo=soloNew();prevWin="";renderGame()}
+    else send({t:"reset"});
+  }
+  $("solo").onclick=function(){
+    if(solo){solo=null;prevWin=S.game.winner;$("solo").textContent="AI와 대결"}
+    else{solo=soloNew();prevWin="";$("solo").textContent="AI 대결 끝내기"}
+    renderGame();
+  };
   function mySide(){
+    if(solo)return "b";
     var g=S.game;
     if(g.black&&g.black.id===myId)return "b";
     if(g.white&&g.white.id===myId)return "w";
     return "";
   }
   function renderSeats(){
-    var g=S.game, el=$("seats"); el.textContent="";
+    var g=cur(), el=$("seats"); el.textContent="";
+    if(solo){
+      [["b","흑",g.black],["w","백",g.white]].forEach(function(s){
+        var box=document.createElement("div"); box.className="seat"+(!g.winner&&g.turn===s[0]?" turn":"");
+        var chip=document.createElement("span"); chip.className="chip "+s[0]; box.appendChild(chip);
+        var t=document.createElement("span"); t.textContent=s[1]+" "+s[2].name+(s[2].id==="me"?" (나)":""); box.appendChild(t);
+        el.appendChild(box);
+      });
+      return;
+    }
     [["b","흑",g.black],["w","백",g.white]].forEach(function(s){
       var box=document.createElement("div"); box.className="seat"+(!g.winner&&g.turn===s[0]&&g.black&&g.white?" turn":"");
       var chip=document.createElement("span"); chip.className="chip "+s[0]; box.appendChild(chip);
@@ -746,7 +820,7 @@ button{cursor:pointer}
     });
   }
   function renderGame(){
-    var g=S.game; renderSeats();
+    var g=cur(); renderSeats();
     var line=g.line?g.line.split(",").map(Number):[], side=mySide();
     for(var i=0;i<N*N;i++){
       var el=cellEls[i], ch=g.cells[i]; el.textContent="";
@@ -764,7 +838,7 @@ button{cursor:pointer}
     else if(!side)st="구경 중입니다.";
     else st=g.turn===side?"내 차례입니다.":"상대 차례입니다.";
     $("gamestatus").textContent=st;
-    if(prevWin!==null){if(!prevWin&&g.winner){showWin(g);confetti()}prevWin=g.winner}
+    if(prevWin!==null){if(!prevWin&&g.winner){showWin(g);if(!(solo&&g.winner==="w"))confetti()}prevWin=g.winner}
   }
   function render(){
     if(isHost||(hostConn&&hostConn.open))setConn(S.count+"명 접속 중",true);
