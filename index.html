@@ -456,8 +456,8 @@ button{cursor:pointer}
   $("boss").onclick=function(){toggleBoss(false)};
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("csdlg").open)toggleBoss($("boss").hidden)});
 
-  /* 문의: FormSubmit으로 메일 전달. 받는 주소를 CS_TARGET에 넣으면 켜진다 */
-  var CS_TARGET="parkminju1034@gmail.com";
+  /* 문의: Web3Forms로 메일 전달 (공개용 접수 키) */
+  var CS_KEY="7e282b2f-1577-4959-9c2b-cea3ebee8caf";
   var csdlg=$("csdlg");
   $("cs").onclick=function(){$("csstatus").textContent="";csdlg.showModal();$("csmsg").focus()};
   $("csclose").onclick=function(){csdlg.close()};
@@ -467,14 +467,14 @@ button{cursor:pointer}
     var msg=$("csmsg").value.trim(), st=$("csstatus"), btn=$("cssend");
     if(!msg){st.textContent="내용을 입력해 주세요.";return}
     if($("cshp").value)return;
-    if(!CS_TARGET){st.textContent="문의 받는 주소가 아직 설정되지 않았습니다.";return}
+    if(!CS_KEY){st.textContent="문의 받는 곳이 아직 설정되지 않았습니다.";return}
     var cat=document.querySelector('input[name="cat"]:checked').value;
     btn.disabled=true; st.textContent="보내는 중";
-    fetch("https://formsubmit.co/ajax/"+CS_TARGET,{
+    fetch("https://api.web3forms.com/submit",{
       method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
-      body:JSON.stringify({_subject:"["+cat+"] 사이트 의견",_template:"table",_captcha:"false",분류:cat,내용:msg,이름:$("csname").value.trim()||nick||"익명"})
+      body:JSON.stringify({access_key:CS_KEY,subject:"["+cat+"] 사이트 의견",from_name:$("csname").value.trim()||nick||"익명",분류:cat,message:msg})
     }).then(function(r){return r.json()}).then(function(j){
-      if(j&&(j.success===true||j.success==="true")){st.textContent="접수되었습니다. 감사합니다.";$("csmsg").value="";setTimeout(function(){csdlg.close()},1200)}
+      if(j&&j.success){st.textContent="접수되었습니다. 감사합니다.";$("csmsg").value="";setTimeout(function(){csdlg.close()},1200)}
       else st.textContent="보내지 못했습니다. 잠시 뒤 다시 시도해 주세요.";
     }).catch(function(){st.textContent="네트워크 오류로 보내지 못했습니다."}).then(function(){btn.disabled=false});
   };
