@@ -318,10 +318,10 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .btop-r{margin-left:auto;display:flex;gap:var(--space-8)}
 .btop{flex-wrap:nowrap;min-height:32px}
 .gstat{min-height:22px;text-align:center;font-size:13px;line-height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#dice.spin svg{animation:dspin .5s ease-out}
+#dice.dicego svg{animation:dspin .5s ease-out}
 @keyframes dspin{from{transform:rotate(0)}to{transform:rotate(540deg)}}
 #toast{position:fixed;left:50%;bottom:104px;transform:translateX(-50%);z-index:80;max-width:calc(100vw - 32px);padding:var(--space-12) var(--space-20);border-radius:var(--radius-full);background:var(--primary);color:var(--primary-foreground);font-size:14px;line-height:22px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.25);text-align:center}
-@media (prefers-reduced-motion:reduce){#dice.spin svg{animation:none}}
+@media (prefers-reduced-motion:reduce){#dice.dicego svg{animation:none}}
 .selwrap{position:relative;display:inline-flex;align-items:center}
 .selwrap svg{position:absolute;right:var(--space-12);top:50%;width:12px;height:12px;margin-top:-6px;pointer-events:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;color:var(--muted-foreground)}
 .selwrap .gsel2:focus,.selwrap .gsel2:focus-visible{outline:none;box-shadow:none}
@@ -1816,7 +1816,7 @@ div.ravatar{cursor:default}
     switchTo(gname);
   };
   $("dice").onclick=function(){
-    var d=$("dice"); d.classList.remove("spin"); void d.offsetWidth; d.classList.add("spin");
+    var d=$("dice"); d.classList.remove("dicego"); void d.offsetWidth; d.classList.add("dicego");
     if(!solo&&!canSwitch())return;
     var cur=curMode(), pool=Object.keys(GNAMES).filter(function(m){return m!==cur&&!(solo&&m==="omok")});
     var pick=pool[Math.floor(Math.random()*pool.length)];
