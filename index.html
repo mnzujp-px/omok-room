@@ -322,6 +322,23 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .selwrap{position:relative;display:inline-flex;align-items:center}
 .selwrap svg{position:absolute;right:var(--space-12);top:50%;width:12px;height:12px;margin-top:-6px;pointer-events:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;color:var(--muted-foreground)}
 .selwrap .gsel2:focus,.selwrap .gsel2:focus-visible{outline:none;box-shadow:none}
+.guidewrap{position:relative;display:inline-flex}
+.guidetip{position:absolute;top:calc(100% + 8px);left:0;z-index:30;width:min(300px,calc(100vw - 48px));padding:var(--space-12) var(--space-16);border-radius:var(--radius-xl);background:var(--primary);color:var(--primary-foreground);font-size:13px;line-height:20px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.25);display:none;white-space:normal}
+.guidewrap:hover .guidetip,.guidewrap:focus-within .guidetip{display:block}
+.bbmine{display:flex;align-items:center;justify-content:center;gap:var(--space-6,6px)}
+.dmini{display:inline-flex;align-items:center;justify-content:center;width:26px;height:30px;border-radius:var(--radius-md);background:var(--background);font-weight:700;font-variant-numeric:tabular-nums;box-shadow:inset 0 0 0 1px var(--input)}
+.bbdigs{display:flex;gap:var(--space-4)}
+.bbres{margin-left:auto;display:flex;gap:var(--space-4)}
+.pill{padding:0 var(--space-8);height:24px;line-height:24px;border-radius:var(--radius-full);font-size:12px;font-weight:700;color:var(--primary-foreground)}
+.pill.s{background:var(--chart-4)}.pill.b{background:var(--chart-5)}.pill.out{background:var(--muted-foreground)}
+.dslots{display:flex;gap:var(--space-12);justify-content:center}
+.dslot{width:56px;height:68px;border-radius:var(--radius-xl);background:var(--background);box-shadow:inset 0 0 0 1px var(--input);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.dslot.on{box-shadow:inset 0 0 0 2px var(--foreground)}
+.kpad{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-8);width:min(100%,264px);margin:0 auto}
+.kbtn{height:44px;border:0;border-radius:var(--radius-full);background:var(--background);color:var(--foreground);font:inherit;font-size:16px;font-weight:600;letter-spacing:inherit;cursor:pointer;box-shadow:inset 0 0 0 1px var(--input)}
+.kbtn:hover:not(:disabled){background:var(--muted)}
+.kbtn.ok{background:var(--primary);color:var(--primary-foreground);box-shadow:none}
+.kbtn:disabled{opacity:.35;cursor:default}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -395,6 +412,10 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
         <div class="btop">
           <span class="selwrap"><select class="gsel2" id="gsel" aria-label="게임 선택"><option value="omok">오목</option><option value="alg">알까기</option><option value="bb">숫자 야구</option><option value="mine">지뢰찾기</option><option value="rps">가위바위보</option></select><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
           <button class="btn btn--ghost iconbtn" id="dice" type="button" aria-label="랜덤으로 게임 고르기" title="주사위로 랜덤 게임 고르기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/></svg></button>
+          <span class="guidewrap">
+            <button class="btn btn--ghost iconbtn" id="guide" type="button" aria-label="게임 규칙" aria-describedby="guidetip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.6" fill="currentColor"/></svg></button>
+            <span class="guidetip" id="guidetip" role="tooltip"></span>
+          </span>
           <div class="btop-r">
             <button class="btn btn--outline btn--xs" id="solo" type="button">AI와 대결</button>
             <button class="btn btn--outline btn--xs" id="reset" type="button">새로 시작</button>
@@ -1392,6 +1413,13 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     if((S.game.black||S.game.white)&&!mySide()){toast("게임은 앉아 있는 사람만 바꿀 수 있어요.");return false}
     return true;
   }
+  var RULES={
+    omok:"흑이 먼저 둡니다. 가로, 세로, 대각선으로 같은 색 돌 5개를 먼저 이으면 승리해요. 혼자서는 'AI와 대결'로 할 수 있어요.",
+    alg:"내 알을 누른 채 반대 방향으로 끌었다 놓으면 튕겨요. 많이 끌수록 세게 나가요. 상대 알을 모두 판 밖으로 떨어뜨리면 승리하고, 차례는 번갈아 와요.",
+    bb:"각자 서로 다른 숫자 3개를 비밀로 정해요. 번갈아 상대 숫자를 맞혀요. 자리와 숫자가 모두 맞으면 S, 숫자만 맞으면 B, 하나도 없으면 아웃이에요. 먼저 3S를 맞히면 승리해요.",
+    mine:"9x9 판에 지뢰 10개가 숨어 있어요. 칸을 열면 나오는 숫자는 주변 8칸의 지뢰 개수예요. 오른쪽 클릭이나 깃발 모드로 깃발을 꽂아요. 모두가 같은 판을 같이 풀고, 첫 클릭은 항상 안전해요.",
+    rps:"둘이 동시에 가위, 바위, 보 중 하나를 골라요. 둘 다 고르면 공개돼요. 먼저 3번 이기면 승리해요."
+  };
   function curMode(){return solo?"omok":S.mode}
   function modeTW(g){
     var m=curMode();
@@ -1438,6 +1466,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     if(!(algOn&&S.alg.moving))renderSeats();
     $("board").hidden=algOn||panelOn; $("alg").hidden=!algOn; $("gpanel").hidden=!panelOn; $("solo").hidden=mode!=="omok";
     if($("gsel").value!==mode)$("gsel").value=mode;
+    $("guidetip").textContent=RULES[mode];
     if(panelOn){$("gamestatus").textContent=panelStatus(mode);renderPanel(mode);winCheck(g);return}
     if(algOn){
       var sa=mySide(), A=S.alg, stt="";
@@ -1445,7 +1474,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       else if(!S.game.black||!S.game.white)stt="";
       else if(A.moving)stt="알이 움직이는 중…";
       else if(!sa)stt="구경 중입니다.";
-      else stt=A.turn===sa?"내 차례입니다. 내 알을 끌었다 놓아 튕기세요.":"상대 차례입니다.";
+      else stt=A.turn===sa?"내 차례입니다.":"상대 차례입니다.";
       $("gamestatus").textContent=stt;
       drawAlg(); winCheck(g); return;
     }
@@ -1568,7 +1597,28 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
   };
   setInterval(function(){if(!$("alg").hidden&&!S.alg.moving&&!drag)drawAlg()},1000);
   /* 숫자 야구 · 지뢰찾기 · 가위바위보 화면 */
-  var myRps="", myBb="", flagMode=false, lastSig="";
+  var myRps="", myBb="", bbIn="", flagMode=false, lastSig="";
+  function bbKey(k){
+    var B=S.bb, me=mySide();
+    var canIn=(B.phase==="setup"&&!(me&&B.ready[me]))||(B.phase==="play"&&me&&B.turn===me);
+    if(!canIn)return;
+    if(k==="del"){bbIn=bbIn.slice(0,-1)}
+    else if(k==="ok"){
+      if(bbIn.length<3){toast("숫자 3개를 모두 입력하세요.");return}
+      if(B.phase==="setup"){
+        if(!needBoth())return;
+        myBb=bbIn; send({t:"bbset",n:bbIn}); bbIn="";
+      }else{send({t:"bbguess",n:bbIn});bbIn=""}
+    }else if(bbIn.length<3&&bbIn.indexOf(k)<0)bbIn+=k;
+    renderGame();
+  }
+  document.addEventListener("keydown",function(e){
+    if(curMode()!=="bb"||e.metaKey||e.ctrlKey||e.altKey)return;
+    var t=e.target&&e.target.tagName; if(t==="INPUT"||t==="TEXTAREA"||t==="SELECT")return;
+    if(/^[0-9]$/.test(e.key)){bbKey(e.key);e.preventDefault()}
+    else if(e.key==="Backspace"){bbKey("del");e.preventDefault()}
+    else if(e.key==="Enter"&&t!=="BUTTON"){bbKey("ok");e.preventDefault()}
+  });
   function sName(side){var p=side==="b"?S.game.black:S.game.white;return (side==="b"?"흑":"백")+(p?" "+p.name:"")}
   function panelStatus(mode){
     var me=mySide(), both=S.game.black&&S.game.white;
@@ -1578,7 +1628,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       if(!both)return "";
       if(R.shown)return R.result==="d"?"비겼어요. 다음 판을 시작하세요.":sName(R.result)+" 승리!";
       if(!me)return "구경 중입니다.";
-      return R.picked[me]?"상대를 기다리는 중입니다.":"가위, 바위, 보 중 하나를 고르세요.";
+      return R.picked[me]?"상대를 기다리는 중입니다.":"선택하세요.";
     }
     if(mode==="bb"){
       var B=S.bb;
@@ -1586,15 +1636,15 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       if(!both)return "";
       if(B.phase==="setup"){
         if(!me)return "구경 중입니다.";
-        return B.ready[me]?"상대가 숫자를 정하는 중입니다.":"비밀 숫자 3개를 정하세요.";
+        return B.ready[me]?"상대가 숫자를 정하는 중입니다.":"비밀 숫자를 정하세요.";
       }
       if(!me)return "구경 중입니다.";
-      return B.turn===me?"내 차례입니다. 상대 숫자를 맞혀 보세요.":"상대 차례입니다.";
+      return B.turn===me?"내 차례입니다.":"상대 차례입니다.";
     }
     var M=S.mine;
     if(M.state==="won")return "클리어! 모두 함께 해냈어요.";
     if(M.state==="lost")return "지뢰를 밟았어요. 새로 시작을 눌러 다시 도전하세요.";
-    return "남은 지뢰 "+(10-M.flags)+"개 · 같이 눌러서 풀어요.";
+    return "남은 지뢰 "+(10-M.flags)+"개";
   }
   function pEl(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
   function rpsLabel(c){return c==="r"?"바위":(c==="p"?"보":"가위")}
@@ -1613,13 +1663,13 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
   }
   function renderPanel(mode){
     var me=mySide(), both=S.game.black&&S.game.white;
-    var sig=JSON.stringify([mode,S[mode],me,!!both,myRps,myBb,flagMode,S.game.black&&S.game.black.name,S.game.white&&S.game.white.name]);
+    var sig=JSON.stringify([mode,S[mode],me,!!both,myRps,myBb,bbIn,flagMode,S.game.black&&S.game.black.name,S.game.white&&S.game.white.name]);
     if(sig===lastSig)return; lastSig=sig;
     var el=$("gpanel"); el.textContent="";
     if(mode==="rps"){
       var R=S.rps; if(!me||!R.picked[me])myRps="";
       el.appendChild(pEl("div","pn-head",sName("b")+"  "+R.score.b+" : "+R.score.w+"  "+sName("w")));
-      el.appendChild(pEl("div","pn-sub",R.round+"판 진행 · 먼저 3번 이기면 승리"));
+      el.appendChild(pEl("div","pn-sub",R.round?R.round+"판 진행":"첫 판"));
       var cards=pEl("div","pcards");
       ["b","w"].forEach(function(sd){
         var c=pEl("div","pcard"), chip=pEl("span","chip "+sd); c.appendChild(chip);
@@ -1643,29 +1693,47 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       }
     }else if(mode==="bb"){
       var B=S.bb;
-      el.appendChild(pEl("div","pn-head","숫자 야구"));
-      el.appendChild(pEl("div","pn-sub","서로 다른 숫자 3개를 맞혀요. 자리와 숫자가 맞으면 S, 숫자만 맞으면 B"));
-      if(B.phase==="setup"){
-        if(!me||!B.ready[me])myBb="";
-        if(!(me&&B.ready[me]))numRow(el,"비밀 숫자","정하기",function(v){if(!needBoth())return false;myBb=v;send({t:"bbset",n:v});renderGame()});
-        else if(me&&B.ready[me])el.appendChild(pEl("div","pn-sub","내 비밀 숫자: "+(myBb||"정했어요")));
-      }else{
-        if(me&&myBb)el.appendChild(pEl("div","pn-sub","내 비밀 숫자: "+myBb));
-        var list=pEl("div","bblist");
-        if(!B.log.length)list.appendChild(pEl("div","pn-sub","아직 기록이 없어요."));
-        B.log.forEach(function(r){
-          var row=pEl("div","bbrow"); row.appendChild(pEl("span","chip "+r.s)); row.appendChild(pEl("span","num",r.n));
-          row.appendChild(pEl("span","",r.st===0&&r.bl===0?"아웃":(r.st+"S "+r.bl+"B"))); list.appendChild(row);
-        });
-        el.appendChild(list);
-        if(B.phase==="done"&&B.reveal)el.appendChild(pEl("div","pn-sub","공개: 흑 "+B.reveal.b+" · 백 "+B.reveal.w));
-        if(B.phase==="play"&&me&&B.turn===me)numRow(el,"맞히기","맞히기",function(v){send({t:"bbguess",n:v})});
+      if(!(me&&B.ready[me]))myBb="";
+      var canIn=(B.phase==="setup"&&!(me&&B.ready[me]))||(B.phase==="play"&&me&&B.turn===me);
+      if(!canIn)bbIn="";
+      if(me&&myBb){
+        var mine=pEl("div","bbmine");
+        mine.appendChild(pEl("span","caption","내 숫자"));
+        myBb.split("").forEach(function(d){mine.appendChild(pEl("span","dmini",d))});
+        el.appendChild(mine);
       }
+      var list=pEl("div","bblist");
+      B.log.forEach(function(r){
+        var row=pEl("div","bbrow"); row.appendChild(pEl("span","chip "+r.s));
+        var digs=pEl("span","bbdigs"); r.n.split("").forEach(function(d){digs.appendChild(pEl("span","dmini",d))}); row.appendChild(digs);
+        var res=pEl("span","bbres");
+        if(r.st===0&&r.bl===0)res.appendChild(pEl("span","pill out","OUT"));
+        else{if(r.st)res.appendChild(pEl("span","pill s",r.st+"S"));if(r.bl)res.appendChild(pEl("span","pill b",r.bl+"B"))}
+        row.appendChild(res); list.appendChild(row);
+      });
+      el.appendChild(list);
+      if(B.phase==="done"&&B.reveal){
+        var rv=pEl("div","bbmine");
+        rv.appendChild(pEl("span","caption","공개"));
+        ["b","w"].forEach(function(sd){rv.appendChild(pEl("span","chip "+sd));B.reveal[sd].split("").forEach(function(d){rv.appendChild(pEl("span","dmini",d))})});
+        el.appendChild(rv);
+      }
+      var slots=pEl("div","dslots");
+      for(var q=0;q<3;q++){var ds=pEl("div","dslot"+(canIn&&q===bbIn.length?" on":""),bbIn.charAt(q)||"");slots.appendChild(ds)}
+      el.appendChild(slots);
+      var pad=pEl("div","kpad");
+      ["1","2","3","4","5","6","7","8","9","del","0","ok"].forEach(function(k){
+        var kb=pEl("button","kbtn"+(k==="ok"?" ok":""),k==="del"?"지움":(k==="ok"?"확인":k)); kb.type="button";
+        if(!canIn||(k.length===1&&bbIn.indexOf(k)>=0))kb.disabled=true;
+        kb.onclick=function(){bbKey(k)};
+        pad.appendChild(kb);
+      });
+      el.appendChild(pad);
     }else{
       var M=S.mine;
       var top=pEl("div","prow"), fb=pEl("button","pbtn",flagMode?"깃발 모드: 켜짐":"깃발 모드: 꺼짐"); fb.type="button"; fb.style.height="36px"; fb.style.minWidth="0"; fb.setAttribute("aria-pressed",String(flagMode));
       fb.onclick=function(){flagMode=!flagMode;renderGame()};
-      top.appendChild(pEl("div","pn-sub","남은 지뢰 "+(10-M.flags)+" · 오른쪽 클릭은 깃발")); top.appendChild(fb); el.appendChild(top);
+      top.appendChild(pEl("div","pn-sub","남은 지뢰 "+(10-M.flags))); top.appendChild(fb); el.appendChild(top);
       var grid=pEl("div",""); grid.id="mgrid";
       for(var i=0;i<81;i++){
         var v=M.v[i], b2=document.createElement("button"); b2.type="button"; b2.dataset.i=i; b2.className="mc";
