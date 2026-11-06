@@ -592,7 +592,7 @@ div.ravatar{cursor:default}
     try{
       localStorage.setItem(ROOM_KEY,JSON.stringify({t:Date.now(),
         S:{chat:S.chat,game:S.game,mode:S.mode,alg:S.alg,rps:S.rps,bb:S.bb,mine:S.mine},
-        P:{BBS:BBS,RPSC:RPSC,MINE:MINE}}));
+        P:{SEC:SEC,RPSC:RPSC,MINE:MINE}}));
     }catch(e){}
   }
   function scheduleSave(){if(!isHost)return;clearTimeout(saveT);saveT=setTimeout(saveRoom,600)}
@@ -603,7 +603,8 @@ div.ravatar{cursor:default}
       if(!d||Date.now()-d.t>=86400000)return false;
       ["chat","game","mode","alg","rps","bb","mine"].forEach(function(k){if(d.S[k]!==undefined)S[k]=d.S[k]});
       S.alg.moving=false;
-      BBS=d.P.BBS||BBS; RPSC=d.P.RPSC||RPSC; MINE=d.P.MINE||null;
+      SEC=d.P.SEC||SEC; RPSC=d.P.RPSC||RPSC; MINE=d.P.MINE||null;
+      if(S.bb.phase==='setup'){S.bb=newBb();SEC=randSecret()}
       restoredAt=Date.now();
       return true;
     }catch(e){return false}
@@ -671,23 +672,19 @@ div.ravatar{cursor:default}
       var R2=S.rps;
       if(S.mode!=="rps"||!sideOf(from)||!R2.shown||R2.winner)return;
       RPSC={b:null,w:null};R2.picked={b:false,w:false};R2.shown=null;R2.result="";
-    }else if(m.t==="bbset"){
-      var sb=sideOf(from),B=S.bb;
-      if(S.mode!=="bb"||!sb||!g.black||!g.white||B.phase!=="setup"||B.ready[sb]||!validNum(m.n))return;
-      BBS[sb]=m.n;B.ready[sb]=true;
-      if(B.ready.b&&B.ready.w){B.phase="play";B.turn="b"}
     }else if(m.t==="bbguess"){
-      var sg=sideOf(from),B2=S.bb;
-      if(S.mode!=="bb"||!sg||B2.phase!=="play"||B2.turn!==sg||!validNum(m.n))return;
-      var sec=BBS[sg==="b"?"w":"b"],st=0,bl=0;
-      for(var q2=0;q2<3;q2++){if(m.n.charAt(q2)===sec.charAt(q2))st++;else if(sec.indexOf(m.n.charAt(q2))>=0)bl++}
+      var sg=sideOf(from),B2=S.bb, bothS=g.black&&g.white;
+      if(S.mode!=="bb"||!sg||B2.phase!=="play"||!validNum(m.n))return;
+      if(bothS&&B2.turn!==sg)return;
+      var st=0,bl=0;
+      for(var q2=0;q2<3;q2++){if(m.n.charAt(q2)===SEC.charAt(q2))st++;else if(SEC.indexOf(m.n.charAt(q2))>=0)bl++}
       B2.log.push({s:sg,n:m.n,st:st,bl:bl});if(B2.log.length>80)B2.log.shift();
-      if(st===3){B2.winner=sg;B2.phase="done";B2.reveal={b:BBS.b,w:BBS.w}}else B2.turn=sg==="b"?"w":"b";
+      if(st===3){B2.winner=sg;B2.phase="done";B2.reveal=SEC}else if(bothS)B2.turn=sg==="b"?"w":"b";
     }else if(m.t==="mrev"){mineReveal(+m.i)
     }else if(m.t==="mflag"){mineFlag(+m.i)
     }else if(m.t==="reset"){
       if(S.mode==="rps"){S.rps=newRps();RPSC={b:null,w:null}}
-      else if(S.mode==="bb"){S.bb=newBb();BBS={b:null,w:null}}
+      else if(S.mode==="bb"){S.bb=newBb();SEC=randSecret()}
       else if(S.mode==="mine"){S.mine=newMine();MINE=null}
       else if(S.mode==="alg"){clearInterval(simTimer);S.alg=newAlg()}
       else{var b=g.black,w=g.white; S.game=blank(); S.game.black=b; S.game.white=w}
@@ -696,9 +693,10 @@ div.ravatar{cursor:default}
   }
   /* 가위바위보·숫자 야구·지뢰찾기: 숨겨야 하는 값(선택, 비밀 숫자, 지뢰 위치)은 방장만 가진다 */
   function newRps(){return {picked:{b:false,w:false},shown:null,result:"",score:{b:0,w:0},round:0,winner:""}}
-  function newBb(){return {phase:"setup",ready:{b:false,w:false},turn:"b",log:[],winner:"",reveal:null}}
+  function randSecret(){var d=["0","1","2","3","4","5","6","7","8","9"],o="";while(o.length<3)o+=d.splice(Math.floor(Math.random()*d.length),1)[0];return o}
+  function newBb(){return {phase:"play",turn:"b",log:[],winner:"",reveal:null}}
   function newMine(){var v=[];for(var i=0;i<81;i++)v.push(-1);return {v:v,state:"play",flags:0,started:false}}
-  var RPSC={b:null,w:null}, BBS={b:null,w:null}, MINE=null;
+  var RPSC={b:null,w:null}, SEC=randSecret(), MINE=null;
   function sideOf(id){var g=S.game;return g.black&&g.black.id===id?"b":(g.white&&g.white.id===id?"w":"")}
   function validNum(n){return typeof n==="string"&&/^\d{3}$/.test(n)&&n[0]!==n[1]&&n[0]!==n[2]&&n[1]!==n[2]}
   function mnb(c){
@@ -1538,7 +1536,7 @@ div.ravatar{cursor:default}
   var RULES={
     omok:"흑이 먼저 둡니다. 가로, 세로, 대각선으로 같은 색 돌 5개를 먼저 이으면 승리해요. 혼자서는 'AI와 대결'로 할 수 있어요.",
     alg:"내 알을 누른 채 반대 방향으로 끌었다 놓으면 튕겨요. 많이 끌수록 세게 나가요. 상대 알을 모두 판 밖으로 떨어뜨리면 승리하고, 차례는 번갈아 와요.",
-    bb:"각자 서로 다른 숫자 3개를 비밀로 정해요. 번갈아 상대 숫자를 맞혀요. 자리와 숫자가 모두 맞으면 S, 숫자만 맞으면 B, 하나도 없으면 아웃이에요. 먼저 3S를 맞히면 승리해요.",
+    bb:"사이트가 서로 다른 숫자 3개를 정해 둬요. 번갈아 숫자 3개를 말하면 자리와 숫자가 모두 맞으면 S, 숫자만 맞으면 B, 하나도 없으면 아웃으로 알려줘요. 먼저 정답(3S)을 맞히면 승리해요. 한 명만 앉아도 혼자 맞힐 수 있어요.",
     mine:"9x9 판에 지뢰 10개가 숨어 있어요. 칸을 열면 나오는 숫자는 주변 8칸의 지뢰 개수예요. 오른쪽 클릭(또는 Shift+클릭)으로 깃발을 꽂아요. 모두가 같은 판을 같이 풀고, 첫 클릭은 항상 안전해요.",
     rps:"둘이 동시에 가위, 바위, 보 중 하나를 골라요. 둘 다 고르면 공개돼요. 먼저 3번 이기면 승리해요."
   };
@@ -1546,7 +1544,7 @@ div.ravatar{cursor:default}
   function modeTW(g){
     var m=curMode();
     if(m==="alg")return {turn:S.alg.turn,win:S.alg.winner};
-    if(m==="bb")return {turn:S.bb.phase==="play"?S.bb.turn:"",win:S.bb.winner};
+    if(m==="bb")return {turn:(S.bb.phase==="play"&&S.game.black&&S.game.white)?S.bb.turn:"",win:S.bb.winner};
     if(m==="rps")return {turn:"",win:S.rps.winner};
     if(m==="mine")return {turn:"",win:""};
     return {turn:g.turn,win:g.winner};
@@ -1719,7 +1717,7 @@ div.ravatar{cursor:default}
   };
   setInterval(function(){if(!$("alg").hidden&&!S.alg.moving&&!drag)drawAlg()},1000);
   /* 숫자 야구 · 지뢰찾기 · 가위바위보 화면 */
-  var myRps="", myBb="", bbIn="", flagMode=false, lastSig="";
+  var myRps="", flagMode=false, lastSig="";
   document.addEventListener("keydown",function(e){
     if(curMode()!=="bb"||e.metaKey||e.ctrlKey||e.altKey)return;
     var t=e.target&&e.target.tagName; if(t==="INPUT"||t==="TEXTAREA"||t==="SELECT")return;
@@ -1738,13 +1736,9 @@ div.ravatar{cursor:default}
     }
     if(mode==="bb"){
       var B=S.bb;
-      if(B.phase==="done")return sName(B.winner)+" 승리. 새로 시작을 눌러 다시 하세요.";
-      if(!both)return "";
-      if(B.phase==="setup"){
-        if(!me)return "구경 중입니다.";
-        return B.ready[me]?"상대가 숫자를 정하는 중입니다.":"비밀 숫자를 정하세요.";
-      }
+      if(B.phase==="done")return sName(B.winner)+" 정답! 새로 시작을 눌러 다시 하세요.";
       if(!me)return "구경 중입니다.";
+      if(!both)return "";
       return B.turn===me?"내 차례입니다.":"상대 차례입니다.";
     }
     var M=S.mine;
@@ -1769,7 +1763,7 @@ div.ravatar{cursor:default}
   }
   function renderPanel(mode){
     var me=mySide(), both=S.game.black&&S.game.white;
-    var sig=JSON.stringify([mode,S[mode],me,!!both,myRps,myBb,bbIn,flagMode,S.game.black&&S.game.black.name,S.game.white&&S.game.white.name]);
+    var sig=JSON.stringify([mode,S[mode],me,!!both,myRps,flagMode,S.game.black&&S.game.black.name,S.game.white&&S.game.white.name]);
     if(sig===lastSig)return; lastSig=sig;
     var ai=document.activeElement, keepFocus=!!(ai&&ai.id==="bbinput"), keepVal=keepFocus?ai.value:"";
     var el=$("gpanel"); el.textContent=""; el.className=(mode==="bb"?"bb":"");
@@ -1800,14 +1794,7 @@ div.ravatar{cursor:default}
       }
     }else if(mode==="bb"){
       var B=S.bb;
-      if(!(me&&B.ready[me]))myBb="";
-      var canIn=(B.phase==="setup"&&!(me&&B.ready[me]))||(B.phase==="play"&&me&&B.turn===me);
-      if(me&&myBb){
-        var mine=pEl("div","bbmine");
-        mine.appendChild(pEl("span","caption","내 숫자"));
-        myBb.split("").forEach(function(d){mine.appendChild(pEl("span","dmini",d))});
-        el.appendChild(mine);
-      }
+      var canIn=B.phase==="play"&&(!me||!both||B.turn===me);
       var list=pEl("div","bblist");
       B.log.forEach(function(r){
         var row=pEl("div","bbrow"); row.appendChild(pEl("span","chip "+r.s));
@@ -1820,22 +1807,16 @@ div.ravatar{cursor:default}
       el.appendChild(list); list.scrollTop=list.scrollHeight;
       if(B.phase==="done"&&B.reveal){
         var rv=pEl("div","bbmine");
-        rv.appendChild(pEl("span","caption","공개"));
-        ["b","w"].forEach(function(sd){rv.appendChild(pEl("span","chip "+sd));B.reveal[sd].split("").forEach(function(d){rv.appendChild(pEl("span","dmini",d))})});
+        rv.appendChild(pEl("span","caption","정답"));
+        B.reveal.split("").forEach(function(d){rv.appendChild(pEl("span","dmini",d))});
         el.appendChild(rv);
       }
       var comp=document.createElement("form"); comp.className="bbcomp";
       var inp=document.createElement("input"); inp.id="bbinput"; inp.type="text"; inp.inputMode="numeric"; inp.maxLength=3; inp.autocomplete="off";
-      inp.setAttribute("aria-label",B.phase==="setup"?"비밀 숫자 3자리":"맞힐 숫자 3자리");
-      inp.placeholder=canIn?(B.phase==="setup"?"비밀 숫자 3자리":"맞힐 숫자 3자리"):(B.phase==="done"?"게임이 끝났어요":(B.phase==="setup"?"상대가 정하는 중이에요":"상대 차례예요"));
+      inp.setAttribute("aria-label","맞힐 숫자 3자리");
+      inp.placeholder=canIn?"맞힐 숫자 3자리":(B.phase==="done"?"게임이 끝났어요":"상대 차례예요");
       inp.disabled=!canIn; inp.value=(keepVal||"").replace(/\D/g,"").slice(0,3);
       inp.addEventListener("input",function(){inp.value=inp.value.replace(/\D/g,"").slice(0,3)});
-      if(B.phase==="setup"&&canIn){
-        var rd=pEl("button","rnd"); rd.type="button"; rd.title="랜덤으로 정하기"; rd.setAttribute("aria-label","랜덤으로 정하기");
-        rd.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/></svg>';
-        rd.onclick=function(){var d=["0","1","2","3","4","5","6","7","8","9"],o="";while(o.length<3){var k=Math.floor(Math.random()*d.length);o+=d.splice(k,1)[0]}inp.value=o;inp.focus()};
-        comp.appendChild(rd);
-      }
       comp.appendChild(inp);
       var go=pEl("button","bbsend"); go.type="submit"; go.disabled=!canIn; go.setAttribute("aria-label","보내기");
       go.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg>';
@@ -1845,8 +1826,8 @@ div.ravatar{cursor:default}
         if(!canIn)return;
         var v=inp.value;
         if(!/^\d{3}$/.test(v)||v[0]===v[1]||v[0]===v[2]||v[1]===v[2]){toast("서로 다른 숫자 3개를 입력하세요.");return}
-        if(B.phase==="setup"){if(!needBoth())return;myBb=v;send({t:"bbset",n:v})}
-        else send({t:"bbguess",n:v});
+        if(!me){toast("먼저 흑이나 백 자리에 앉아 주세요.");return}
+        send({t:"bbguess",n:v});
         inp.value="";
       };
       el.appendChild(comp);
