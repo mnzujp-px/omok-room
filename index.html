@@ -392,22 +392,23 @@ div.ravatar{cursor:default}
 .bbsend{width:32px;height:32px;flex:none;border:0;border-radius:var(--radius-full);background:var(--send);color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .bbsend:disabled{opacity:.35;cursor:default}
 .bbsend svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-#gpanel.rps{justify-content:center;align-items:center;gap:var(--space-24)}
-.rscore{display:flex;align-items:center;gap:var(--space-16);padding:var(--space-8) var(--space-24);background:var(--background);border-radius:var(--radius-xl);box-shadow:inset 0 0 0 1px var(--input)}
+#gpanel.rps{justify-content:center;align-items:center;gap:var(--space-16)}
+.rscore{display:flex;align-items:center;gap:var(--space-12);padding:var(--space-4) var(--space-16);background:var(--background);border-radius:var(--radius-full);box-shadow:inset 0 0 0 1px var(--input)}
 .rhalf{display:flex;align-items:center;gap:var(--space-8)}
-.rnum{font-size:24px;line-height:32px;font-weight:700;font-variant-numeric:tabular-nums;min-width:20px;text-align:center}
+.rnum{font-size:16px;line-height:28px;font-weight:600;font-variant-numeric:tabular-nums;min-width:20px;text-align:center}
 .rsep{color:var(--muted-foreground);font-weight:700}
-.rarena{display:flex;gap:var(--space-16);justify-content:center}
-.rcard{width:clamp(96px,26cqh,150px);aspect-ratio:1;border-radius:var(--radius-2xl);background:var(--background);display:flex;align-items:center;justify-content:center;color:var(--foreground);box-shadow:inset 0 0 0 1px var(--input)}
-.rcard svg{width:50%;height:50%;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.rcard.win{box-shadow:inset 0 0 0 2px var(--chart-4)}
-.rcard.lose{opacity:.45}
-.rpick{display:flex;gap:var(--space-12);justify-content:center;min-height:56px;align-items:center}
-.rbtn,.rnext{width:56px;height:56px;border:0;border-radius:var(--radius-full);background:var(--background);color:var(--foreground);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:inset 0 0 0 1px var(--input)}
+.rarena{display:flex;gap:var(--space-24);justify-content:center}
+.rcard{width:60px;height:60px;border-radius:var(--radius-full);background:var(--background);display:flex;align-items:center;justify-content:center;color:var(--foreground);box-shadow:inset 0 0 0 1px var(--input)}
+.rcard svg{width:56%;height:56%;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.rcard.win{box-shadow:inset 0 0 0 1px var(--foreground)}
+.rcard.lose{opacity:.4}
+.rcard.waiting svg{width:40%;height:40%;color:var(--muted-foreground)}
+.rpick{display:flex;gap:var(--space-8);justify-content:center;min-height:44px;align-items:center}
+.rbtn,.rnext{width:44px;height:44px;border:0;border-radius:var(--radius-full);background:var(--background);color:var(--foreground);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:inset 0 0 0 1px var(--input)}
 .rbtn:hover{background:var(--muted)}
 .rbtn[aria-pressed="true"]{background:var(--primary);color:var(--primary-foreground);box-shadow:none}
 .rnext{background:var(--primary);color:var(--primary-foreground);box-shadow:none}
-.rbtn svg,.rnext svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.rbtn svg,.rnext svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -1797,7 +1798,7 @@ div.ravatar{cursor:default}
       el.appendChild(sc);
       var arena=pEl("div","rarena");
       ["b","w"].forEach(function(sd){
-        var c=pEl("div","rcard"+(R.shown&&R.result===sd?" win":"")+(R.shown&&R.result!=="d"&&R.result!==sd?" lose":"")); c.title=sName(sd);
+        var c=pEl("div","rcard"+(R.shown?"":" waiting")+(R.shown&&R.result===sd?" win":"")+(R.shown&&R.result!=="d"&&R.result!==sd?" lose":"")); c.title=sName(sd);
         c.innerHTML=R.shown?RICON[R.shown[sd]]:(R.picked[sd]?RICON.done:RICON.wait);
         c.setAttribute("aria-label",sName(sd)+" "+(R.shown?rpsLabel(R.shown[sd]):(R.picked[sd]?"선택 완료":"고르는 중")));
         arena.appendChild(c);
