@@ -356,9 +356,9 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .rp{position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex:none}
 .ravatar{width:32px;height:32px;border-radius:var(--radius-full);border:0;padding:0;background:var(--primary);color:var(--primary-foreground);display:flex;align-items:center;justify-content:center;font:inherit;font-weight:600;font-size:13px;letter-spacing:inherit;cursor:pointer}
 div.ravatar{cursor:default}
-.sdot{position:absolute;right:1px;bottom:1px;width:12px;height:12px;border-radius:var(--radius-full);box-sizing:border-box;border:2px solid var(--muted)}
-.sdot.on{background:var(--chart-4)}
-.sdot.off{background:var(--muted);border-color:var(--muted-foreground)}
+.sdot{position:absolute;right:0;bottom:0;width:12px;height:12px;border-radius:var(--radius-full);box-sizing:border-box;border:0}
+.sdot.on{background:var(--chart-4);box-shadow:0 0 0 2px var(--muted)}
+.sdot.off{background:var(--muted);box-shadow:inset 0 0 0 2px var(--muted-foreground),0 0 0 2px var(--muted)}
 .avcrown{display:none}
 .ravatar.host .avcrown{display:flex}
 .ravatar.host #meinit{display:none}
