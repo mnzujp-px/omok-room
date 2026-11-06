@@ -579,8 +579,30 @@ div.ravatar{cursor:default}
     }
     return null;
   }
+  /* 방장 브라우저에 방 상태를 저장해 두었다가 새로고침 뒤 복원한다 */
+  var ROOM_KEY="br-room-"+room, saveT=null, restoredAt=0;
+  function saveRoom(){
+    try{
+      localStorage.setItem(ROOM_KEY,JSON.stringify({t:Date.now(),
+        S:{chat:S.chat,game:S.game,mode:S.mode,alg:S.alg,rps:S.rps,bb:S.bb,mine:S.mine},
+        P:{BBS:BBS,RPSC:RPSC,MINE:MINE}}));
+    }catch(e){}
+  }
+  function scheduleSave(){if(!isHost)return;clearTimeout(saveT);saveT=setTimeout(saveRoom,600)}
+  function hasSavedRoom(){try{var d=JSON.parse(localStorage.getItem(ROOM_KEY)||"null");return !!(d&&Date.now()-d.t<86400000)}catch(e){return false}}
+  function restoreRoom(){
+    try{
+      var d=JSON.parse(localStorage.getItem(ROOM_KEY)||"null");
+      if(!d||Date.now()-d.t>=86400000)return false;
+      ["chat","game","mode","alg","rps","bb","mine"].forEach(function(k){if(d.S[k]!==undefined)S[k]=d.S[k]});
+      S.alg.moving=false;
+      BBS=d.P.BBS||BBS; RPSC=d.P.RPSC||RPSC; MINE=d.P.MINE||null;
+      restoredAt=Date.now();
+      return true;
+    }catch(e){return false}
+  }
   function broadcast(){
-    S.count=conns.length+1;
+    S.count=conns.length+1; scheduleSave();
     conns.forEach(function(c){if(c.open)c.send({t:"state",s:S})});
     render();
   }
@@ -787,6 +809,12 @@ div.ravatar{cursor:default}
       var alive=conns.some(function(c){return c.peer===id&&c.open});
       if(!alive){dropPeer(id);changed=true}
     });
+    if(restoredAt&&Date.now()-restoredAt>30000){
+      ['black','white'].forEach(function(k){
+        var p=S.game[k];
+        if(p&&p.id!==myId&&!conns.some(function(c){return c.peer===p.id&&c.open})){S.game[k]=null;changed=true}
+      });
+    }
     if(changed)broadcast();
   },5000);
   function send(m){
@@ -796,36 +824,56 @@ div.ravatar{cursor:default}
 
   /* 연결 */
   function setConn(t,ok){var c=$("conn");c.textContent=t;c.classList.toggle("ok",!!ok)}
+  var hostTries=0;
   function startAsHost(){
     peer=new Peer(HOST_ID);
-    peer.on("open",function(id){isHost=true;myId=id;setConn("1명 접속 중",true);render();sendPresence()});
+    peer.on("open",function(id){isHost=true;myId=id;if(restoreRoom())setConn("이전 방을 복원했어요",true);else setConn("1명 접속 중",true);render();sendPresence()});
     peer.on("connection",function(c){
       c.on("open",function(){conns.push(c);broadcast()});
-      c.on("data",function(m){apply(c.peer,m)});
+      c.on("data",function(m){if(m&&m.t==="presence"&&c.open)c.send({t:"pong"});apply(c.peer,m)});
       c.on("close",function(){
         conns=conns.filter(function(x){return x!==c});
+        if(conns.some(function(x){return x.peer===c.peer&&x.open}))return;
         delete S.people[c.peer]; var g=S.game; if(g.black&&g.black.id===c.peer)g.black=null; if(g.white&&g.white.id===c.peer)g.white=null;
         broadcast();
       });
     });
     peer.on("error",function(e){
-      if(e.type==="unavailable-id"){peer.destroy();startAsGuest()}
+      if(e.type==="unavailable-id"){
+        peer.destroy();
+        /* 방장이던 흔적이 있으면 새로고침 직후일 수 있으니 잠시 기다렸다가 다시 방장으로 열어 본다 */
+        if(hasSavedRoom()&&hostTries<10){hostTries++;setConn("방을 다시 여는 중…");setTimeout(startAsHost,2000)}
+        else startAsGuest();
+      }
       else setConn("연결 오류: "+e.type);
     });
   }
   function startAsGuest(){
     prevWin=null;
     peer=new Peer();
-    peer.on("open",function(id){
-      myId=id; hostConn=peer.connect(HOST_ID,{reliable:true});
+    var lastTry=0, lastAlive=Date.now();
+    function connectHost(){
+      lastTry=Date.now(); lastAlive=Date.now();
+      try{if(hostConn)hostConn.close()}catch(e){}
+      hostConn=peer.connect(HOST_ID,{reliable:true});
       hostConn.on("open",function(){setConn("연결됨",true);sendPresence()});
       hostConn.on("data",function(m){
+        lastAlive=Date.now();
+        if(m.t==="pong")return;
         if(m.t==="state"){S=m.s;if(prevWin===null)prevWin=winnerValue();render()}
         else if(m.t==="alg"){S.alg=m.a;renderGame()}
       });
-      hostConn.on("close",function(){setConn("방장이 나갔습니다. 이 링크를 다시 열면 새 방이 열립니다.")});
+      hostConn.on("close",function(){setConn("방장과 연결이 끊겼어요. 다시 연결하는 중…")});
+    }
+    peer.on("open",function(id){
+      myId=id; connectHost();
+      setInterval(function(){
+        var dead=!(hostConn&&hostConn.open)||(Date.now()-lastAlive>25000);
+        if(dead&&Date.now()-lastTry>6000)connectHost();
+      },3000);
     });
-    peer.on("error",function(e){setConn(e.type==="peer-unavailable"?"방을 찾지 못했습니다. 잠시 뒤 새로고침하세요.":"연결 오류: "+e.type)});
+    peer.on("disconnected",function(){try{peer.reconnect()}catch(e){}});
+    peer.on("error",function(e){setConn(e.type==="peer-unavailable"?"방을 찾는 중…":"연결 오류: "+e.type)});
   }
   startAsHost();
 
