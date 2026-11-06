@@ -326,7 +326,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .selwrap svg{position:absolute;right:var(--space-12);top:50%;width:12px;height:12px;margin-top:-6px;pointer-events:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;color:var(--muted-foreground)}
 .selwrap .gsel2:focus,.selwrap .gsel2:focus-visible{outline:none;box-shadow:none}
 .guidewrap{position:relative;display:inline-flex}
-.guidetip{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);z-index:30;width:min(300px,calc(100vw - 48px));padding:var(--space-12) var(--space-16);border-radius:var(--radius-xl);background:var(--primary);color:var(--primary-foreground);font-size:13px;line-height:20px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.25);display:none;white-space:normal}
+.guidetip{position:absolute;top:calc(100% + 8px);right:0;left:auto;z-index:30;width:min(300px,calc(100vw - 48px));padding:var(--space-12) var(--space-16);border-radius:var(--radius-xl);background:var(--primary);color:var(--primary-foreground);font-size:13px;line-height:20px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.25);display:none;white-space:normal}
 .guidewrap:hover .guidetip,.guidewrap:focus-within .guidetip{display:block}
 .bbmine{display:flex;align-items:center;justify-content:center;gap:var(--space-6,6px)}
 .dmini{display:inline-flex;align-items:center;justify-content:center;width:26px;height:30px;border-radius:var(--radius-md);background:var(--background);font-weight:700;font-variant-numeric:tabular-nums;box-shadow:inset 0 0 0 1px var(--input)}
@@ -542,7 +542,7 @@ div.ravatar{cursor:default}
           <span class="selwrap"><select class="gsel2" id="gsel" aria-label="게임 선택"><option value="omok">오목</option><option value="alg">알까기</option><option value="bb">숫자 야구</option><option value="mine">지뢰찾기</option><option value="rps">가위바위보</option></select><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
           <button class="btn btn--ghost iconbtn" id="dice" type="button" aria-label="랜덤으로 게임 고르기" title="주사위로 랜덤 게임 고르기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/></svg></button>
           <span class="guidewrap">
-            <button class="btn btn--ghost iconbtn" id="guide" type="button" aria-label="게임 규칙" aria-describedby="guidetip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.6" fill="currentColor"/></svg></button>
+            <button class="btn btn--ghost iconbtn" id="guide" type="button" aria-label="게임 규칙" aria-describedby="guidetip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1.1.9-1.1 1.7"/><circle cx="12" cy="16.9" r="0.7" fill="currentColor"/></svg></button>
             <span class="guidetip" id="guidetip" role="tooltip"></span>
           </span>
           <div class="btop-r">
