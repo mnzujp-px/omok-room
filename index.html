@@ -81,7 +81,7 @@ button{cursor:pointer}
 .canvas{display:none;background:var(--card);padding:var(--space-16);min-height:0;flex-direction:column;gap:var(--space-12)}
 .app.canvas-open .canvas{display:flex}
 .canvas>*:not(.opctl):not(.resizer){opacity:var(--cv,1)}
-.canvas{position:relative}
+.canvas{position:relative;container-type:inline-size}
 .resizer{display:none;position:absolute;left:-8px;top:0;bottom:0;width:12px;cursor:col-resize;z-index:5;touch-action:none}
 .resizer::after{content:"";position:absolute;left:5px;top:50%;width:3px;height:40px;margin-top:-20px;background:var(--border);border-radius:var(--radius-full)}
 .resizer:hover::after,.resizer:focus-visible::after,.resizer.drag::after{background:var(--muted-foreground)}
@@ -425,6 +425,15 @@ div.ravatar{cursor:default}
 .rail::-webkit-scrollbar{display:none}
 .rail>*{flex:none}
 .rail>.rail__spacer{flex:1 1 0;min-height:0}
+.sc{display:none}
+.opctl #seats .seat{white-space:nowrap}
+@container (max-width:480px){
+  .sf{display:none}
+  .sc{display:inline}
+  .opctl #seats{flex-wrap:nowrap;gap:var(--space-4);margin-left:0}
+  .opctl #seats .seat{padding:var(--space-2) var(--space-8)}
+  .opctl input[type=range]{width:64px}
+}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -1616,6 +1625,7 @@ div.ravatar{cursor:default}
     if(m==="mine")return S.mine.state==="won"?"c":"";
     return cur().winner;
   }
+  function shortName(n){var a=Array.from(String(n||""));return a.length>3?a.slice(0,3).join("")+"…":a.join("")}
   function renderSeats(){
     var g=cur(), el=$("seats"); el.textContent="";
     [["b","흑",g.black],["w","백",g.white]].forEach(function(sd){
@@ -1627,13 +1637,15 @@ div.ravatar{cursor:default}
         var box=document.createElement("div"); box.className="seat"+(turn?" turn":"");
         box.appendChild(chipEl());
         var mine=solo?p.id==="me":p.id===myId;
-        var t=document.createElement("span"); t.textContent=p.name+(mine?" (나)":""); box.appendChild(t);
+        var t=document.createElement("span"); t.className="sf"; t.textContent=p.name+(mine?" (나)":""); box.appendChild(t);
+        var tc=document.createElement("span"); tc.className="sc"; tc.textContent=mine?"(나)":"("+shortName(p.name)+")"; box.appendChild(tc);
         if(!solo&&mine){var x=document.createElement("button");x.type="button";x.className="x";x.textContent="\u00d7";x.setAttribute("aria-label","나가기");x.title="자리 나가기";x.onclick=function(){send({t:"leave",side:key})};box.appendChild(x)}
         el.appendChild(box);
       }else{
         var b=document.createElement("button"); b.type="button"; b.className="seat";
         b.appendChild(chipEl());
-        var tt=document.createElement("span"); tt.textContent="앉기"; b.appendChild(tt);
+        var tt=document.createElement("span"); tt.className="sf"; tt.textContent="앉기"; b.appendChild(tt);
+        var tcc=document.createElement("span"); tcc.className="sc"; tcc.textContent="(빈자리)"; b.appendChild(tcc);
         b.setAttribute("aria-label",sd[1]+" 자리에 앉기"); b.onclick=function(){send({t:"claim",side:key,name:myName()})};
         el.appendChild(b);
       }
