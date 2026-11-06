@@ -299,9 +299,8 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .pbtn[aria-pressed="true"]{background:var(--primary);color:var(--primary-foreground)}
 .bbrow{display:flex;align-items:center;gap:var(--space-12);padding:var(--space-8) var(--space-12);background:var(--background);border-radius:var(--radius-lg)}
 .bbrow .num{font-weight:700;letter-spacing:.15em;font-variant-numeric:tabular-nums}
-.bblist{display:flex;flex-direction:column;gap:var(--space-4);flex:none;width:min(100%,300px);height:clamp(56px,20cqh,132px);margin:0 auto;overflow-y:auto}
-#gpanel.bb{justify-content:center;align-items:center}
-#gpanel.bb>*{max-width:100%}
+.bblist{display:flex;flex-direction:column;gap:var(--space-4);flex:1 1 0;min-height:0;width:100%;overflow-y:auto}
+#gpanel.bb{justify-content:flex-start;align-items:stretch}
 .pin{display:flex;gap:var(--space-8);justify-content:center}
 .pin input{width:120px;height:44px;text-align:center;font-size:20px;font-weight:700;letter-spacing:.2em;border:0;border-radius:var(--radius-full);background:var(--background);color:var(--foreground);box-shadow:inset 0 0 0 1px var(--input)}
 .pin input:focus-visible{outline:2px solid var(--ring)}
@@ -385,6 +384,14 @@ div.ravatar{cursor:default}
 .rnd svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .dslots{align-items:center;position:relative}
 .dslots .rnd{position:absolute;left:100%;margin-left:var(--space-12)}
+.bbcomp{flex:none;display:flex;align-items:center;gap:var(--space-8);background:var(--background);border-radius:var(--radius-full);padding:var(--space-6,6px) var(--space-8) var(--space-6,6px) var(--space-20);box-shadow:inset 0 0 0 1px var(--input)}
+.bbcomp:focus-within{box-shadow:inset 0 0 0 1px var(--muted-foreground)}
+.bbcomp input{flex:1;min-width:0;height:36px;border:0;background:transparent;color:var(--foreground);font:inherit;font-size:16px;letter-spacing:inherit;font-variant-numeric:tabular-nums;outline:none}
+.bbcomp input::placeholder{color:var(--muted-foreground)}
+.bbcomp .rnd{align-self:center;flex:none}
+.bbsend{width:32px;height:32px;flex:none;border:0;border-radius:var(--radius-full);background:var(--send);color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.bbsend:disabled{opacity:.35;cursor:default}
+.bbsend svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -1713,26 +1720,10 @@ div.ravatar{cursor:default}
   setInterval(function(){if(!$("alg").hidden&&!S.alg.moving&&!drag)drawAlg()},1000);
   /* 숫자 야구 · 지뢰찾기 · 가위바위보 화면 */
   var myRps="", myBb="", bbIn="", flagMode=false, lastSig="";
-  function bbKey(k){
-    var B=S.bb, me=mySide();
-    var canIn=(B.phase==="setup"&&!(me&&B.ready[me]))||(B.phase==="play"&&me&&B.turn===me);
-    if(!canIn)return;
-    if(k==="del"){bbIn=bbIn.slice(0,-1)}
-    else if(k==="ok"){
-      if(bbIn.length<3){toast("숫자 3개를 모두 입력하세요.");return}
-      if(B.phase==="setup"){
-        if(!needBoth())return;
-        myBb=bbIn; send({t:"bbset",n:bbIn}); bbIn="";
-      }else{send({t:"bbguess",n:bbIn});bbIn=""}
-    }else if(bbIn.length<3&&bbIn.indexOf(k)<0)bbIn+=k;
-    renderGame();
-  }
   document.addEventListener("keydown",function(e){
     if(curMode()!=="bb"||e.metaKey||e.ctrlKey||e.altKey)return;
     var t=e.target&&e.target.tagName; if(t==="INPUT"||t==="TEXTAREA"||t==="SELECT")return;
-    if(/^[0-9]$/.test(e.key)){bbKey(e.key);e.preventDefault()}
-    else if(e.key==="Backspace"){bbKey("del");e.preventDefault()}
-    else if(e.key==="Enter"&&t!=="BUTTON"){bbKey("ok");e.preventDefault()}
+    var inp=$("bbinput"); if(inp&&!inp.disabled&&/^[0-9]$/.test(e.key))inp.focus();
   });
   function sName(side){var p=side==="b"?S.game.black:S.game.white;return (side==="b"?"흑":"백")+(p?" "+p.name:"")}
   function panelStatus(mode){
@@ -1780,6 +1771,7 @@ div.ravatar{cursor:default}
     var me=mySide(), both=S.game.black&&S.game.white;
     var sig=JSON.stringify([mode,S[mode],me,!!both,myRps,myBb,bbIn,flagMode,S.game.black&&S.game.black.name,S.game.white&&S.game.white.name]);
     if(sig===lastSig)return; lastSig=sig;
+    var ai=document.activeElement, keepFocus=!!(ai&&ai.id==="bbinput"), keepVal=keepFocus?ai.value:"";
     var el=$("gpanel"); el.textContent=""; el.className=(mode==="bb"?"bb":"");
     if(mode==="rps"){
       var R=S.rps; if(!me||!R.picked[me])myRps="";
@@ -1810,14 +1802,12 @@ div.ravatar{cursor:default}
       var B=S.bb;
       if(!(me&&B.ready[me]))myBb="";
       var canIn=(B.phase==="setup"&&!(me&&B.ready[me]))||(B.phase==="play"&&me&&B.turn===me);
-      if(!canIn)bbIn="";
       if(me&&myBb){
         var mine=pEl("div","bbmine");
         mine.appendChild(pEl("span","caption","내 숫자"));
         myBb.split("").forEach(function(d){mine.appendChild(pEl("span","dmini",d))});
         el.appendChild(mine);
       }
-      if(B.phase!=="setup"){
       var list=pEl("div","bblist");
       B.log.forEach(function(r){
         var row=pEl("div","bbrow"); row.appendChild(pEl("span","chip "+r.s));
@@ -1828,31 +1818,39 @@ div.ravatar{cursor:default}
         row.appendChild(res); list.appendChild(row);
       });
       el.appendChild(list); list.scrollTop=list.scrollHeight;
-      }
       if(B.phase==="done"&&B.reveal){
         var rv=pEl("div","bbmine");
         rv.appendChild(pEl("span","caption","공개"));
         ["b","w"].forEach(function(sd){rv.appendChild(pEl("span","chip "+sd));B.reveal[sd].split("").forEach(function(d){rv.appendChild(pEl("span","dmini",d))})});
         el.appendChild(rv);
       }
-      if(B.phase==="setup"&&canIn)el.appendChild(pEl("div","pn-sub","내 비밀 숫자"));
-      var slots=pEl("div","dslots");
-      for(var q=0;q<3;q++){var ds=pEl("div","dslot"+(canIn&&q===bbIn.length?" on":""),bbIn.charAt(q)||"");slots.appendChild(ds)}
+      var comp=document.createElement("form"); comp.className="bbcomp";
+      var inp=document.createElement("input"); inp.id="bbinput"; inp.type="text"; inp.inputMode="numeric"; inp.maxLength=3; inp.autocomplete="off";
+      inp.setAttribute("aria-label",B.phase==="setup"?"비밀 숫자 3자리":"맞힐 숫자 3자리");
+      inp.placeholder=canIn?(B.phase==="setup"?"비밀 숫자 3자리":"맞힐 숫자 3자리"):(B.phase==="done"?"게임이 끝났어요":(B.phase==="setup"?"상대가 정하는 중이에요":"상대 차례예요"));
+      inp.disabled=!canIn; inp.value=(keepVal||"").replace(/\D/g,"").slice(0,3);
+      inp.addEventListener("input",function(){inp.value=inp.value.replace(/\D/g,"").slice(0,3)});
       if(B.phase==="setup"&&canIn){
         var rd=pEl("button","rnd"); rd.type="button"; rd.title="랜덤으로 정하기"; rd.setAttribute("aria-label","랜덤으로 정하기");
         rd.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/></svg>';
-        rd.onclick=function(){var d=["0","1","2","3","4","5","6","7","8","9"],o="";while(o.length<3){var k=Math.floor(Math.random()*d.length);o+=d.splice(k,1)[0]}bbIn=o;renderGame()};
-        slots.appendChild(rd);
+        rd.onclick=function(){var d=["0","1","2","3","4","5","6","7","8","9"],o="";while(o.length<3){var k=Math.floor(Math.random()*d.length);o+=d.splice(k,1)[0]}inp.value=o;inp.focus()};
+        comp.appendChild(rd);
       }
-      el.appendChild(slots);
-      var pad=pEl("div","kpad");
-      ["1","2","3","4","5","6","7","8","9","del","0","ok"].forEach(function(k){
-        var kb=pEl("button","kbtn"+(k==="ok"?" ok":""),k==="del"?"지움":(k==="ok"?"확인":k)); kb.type="button";
-        if(!canIn||(k.length===1&&bbIn.indexOf(k)>=0))kb.disabled=true;
-        kb.onclick=function(){bbKey(k)};
-        pad.appendChild(kb);
-      });
-      el.appendChild(pad);
+      comp.appendChild(inp);
+      var go=pEl("button","bbsend"); go.type="submit"; go.disabled=!canIn; go.setAttribute("aria-label","보내기");
+      go.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg>';
+      comp.appendChild(go);
+      comp.onsubmit=function(e){
+        e.preventDefault();
+        if(!canIn)return;
+        var v=inp.value;
+        if(!/^\d{3}$/.test(v)||v[0]===v[1]||v[0]===v[2]||v[1]===v[2]){toast("서로 다른 숫자 3개를 입력하세요.");return}
+        if(B.phase==="setup"){if(!needBoth())return;myBb=v;send({t:"bbset",n:v})}
+        else send({t:"bbguess",n:v});
+        inp.value="";
+      };
+      el.appendChild(comp);
+      if(canIn&&(keepFocus||document.activeElement===document.body)){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length)}
     }else{
       var M=S.mine;
       var top=pEl("div","mhead");
