@@ -299,7 +299,9 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .pbtn[aria-pressed="true"]{background:var(--primary);color:var(--primary-foreground)}
 .bbrow{display:flex;align-items:center;gap:var(--space-12);padding:var(--space-8) var(--space-12);background:var(--background);border-radius:var(--radius-lg)}
 .bbrow .num{font-weight:700;letter-spacing:.15em;font-variant-numeric:tabular-nums}
-.bblist{display:flex;flex-direction:column;gap:var(--space-4);flex:1;min-height:0;overflow-y:auto}
+.bblist{display:flex;flex-direction:column;gap:var(--space-4);flex:none;width:min(100%,300px);height:132px;margin:0 auto;overflow-y:auto}
+#gpanel.bb{justify-content:center;align-items:center}
+#gpanel.bb>*{max-width:100%}
 .pin{display:flex;gap:var(--space-8);justify-content:center}
 .pin input{width:120px;height:44px;text-align:center;font-size:20px;font-weight:700;letter-spacing:.2em;border:0;border-radius:var(--radius-full);background:var(--background);color:var(--foreground);box-shadow:inset 0 0 0 1px var(--input)}
 .pin input:focus-visible{outline:2px solid var(--ring)}
@@ -1725,7 +1727,7 @@ div.ravatar{cursor:default}
     var me=mySide(), both=S.game.black&&S.game.white;
     var sig=JSON.stringify([mode,S[mode],me,!!both,myRps,myBb,bbIn,flagMode,S.game.black&&S.game.black.name,S.game.white&&S.game.white.name]);
     if(sig===lastSig)return; lastSig=sig;
-    var el=$("gpanel"); el.textContent="";
+    var el=$("gpanel"); el.textContent=""; el.className=(mode==="bb"?"bb":"");
     if(mode==="rps"){
       var R=S.rps; if(!me||!R.picked[me])myRps="";
       el.appendChild(pEl("div","pn-head",sName("b")+"  "+R.score.b+" : "+R.score.w+"  "+sName("w")));
@@ -1771,7 +1773,7 @@ div.ravatar{cursor:default}
         else{if(r.st)res.appendChild(pEl("span","pill s",r.st+"S"));if(r.bl)res.appendChild(pEl("span","pill b",r.bl+"B"))}
         row.appendChild(res); list.appendChild(row);
       });
-      el.appendChild(list);
+      el.appendChild(list); list.scrollTop=list.scrollHeight;
       if(B.phase==="done"&&B.reveal){
         var rv=pEl("div","bbmine");
         rv.appendChild(pEl("span","caption","공개"));
