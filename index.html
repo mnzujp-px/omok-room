@@ -409,6 +409,12 @@ div.ravatar{cursor:default}
 .rbtn[aria-pressed="true"]{background:var(--primary);color:var(--primary-foreground);box-shadow:none}
 .rnext{background:var(--primary);color:var(--primary-foreground);box-shadow:none}
 .rbtn svg,.rnext svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.spin{width:14px;height:14px;border-radius:var(--radius-full);border:2px solid color-mix(in srgb,var(--muted-foreground) 30%,transparent);border-top-color:var(--muted-foreground);animation:rspin .8s linear infinite;box-sizing:border-box}
+@keyframes rspin{to{transform:rotate(360deg)}}
+.rprof.skel .ravatar{opacity:.35;cursor:default}
+.rprof.skel .spin{position:absolute;right:0;bottom:0;width:14px;height:14px;background:var(--muted)}
+#conn.loading::before{width:12px;height:12px;background:transparent;border:2px solid color-mix(in srgb,var(--muted-foreground) 30%,transparent);border-top-color:var(--muted-foreground);box-sizing:border-box;animation:rspin .8s linear infinite}
+@media (prefers-reduced-motion:reduce){.spin,#conn.loading::before{animation:none}}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -531,6 +537,7 @@ div.ravatar{cursor:default}
   </form>
   <label class="pm__row pm__label" for="status"><span>상태</span><select id="status" class="stsel2" aria-label="내 상태"><option>대화 가능</option><option>업무 중</option><option>회의 중</option><option>자리 비움</option></select></label>
   <label class="pm__row pm__label" for="themeSwitch"><span>다크 모드</span><input type="checkbox" role="switch" id="themeSwitch" class="switch"></label>
+  <label class="pm__row pm__label" for="fxSwitch"><span>승리 효과</span><input type="checkbox" role="switch" id="fxSwitch" class="switch"></label>
   <button class="pm__item" id="csmenu" type="button">문의 보내기</button>
 </div>
 
@@ -609,9 +616,20 @@ div.ravatar{cursor:default}
     try{
       localStorage.setItem(ROOM_KEY,JSON.stringify({t:Date.now(),
         S:{chat:S.chat,game:S.game,mode:S.mode,alg:S.alg,rps:S.rps,bb:S.bb,mine:S.mine},
-        P:{SEC:SEC,RPSC:RPSC,MINE:MINE}}));
+        P:{SEC:SEC,RPSC:RPSC,MINE:MINE,exp:expectList()}}));
     }catch(e){}
   }
+  function expectList(){
+    var cur=Object.keys(S.people||{}).filter(function(id){return id!==HOST_ID&&id!==myId}).map(function(id){return {id:id,name:S.people[id].name}});
+    if(cur.length)return cur;
+    try{var d=JSON.parse(localStorage.getItem(ROOM_KEY)||"null");return (d&&d.P&&d.P.exp)||[]}catch(e){return []}
+  }
+  var expected=[], expectUntil=0;
+  function expecting(){
+    if(!isHost||Date.now()>=expectUntil)return [];
+    return expected.filter(function(e){return !S.people[e.id]});
+  }
+  window.addEventListener("beforeunload",function(){if(isHost){clearTimeout(saveT);saveRoom()}});
   function scheduleSave(){if(!isHost)return;clearTimeout(saveT);saveT=setTimeout(saveRoom,600)}
   function hasSavedRoom(){try{var d=JSON.parse(localStorage.getItem(ROOM_KEY)||"null");return !!(d&&Date.now()-d.t<86400000)}catch(e){return false}}
   function restoreRoom(){
@@ -623,6 +641,8 @@ div.ravatar{cursor:default}
       SEC=d.P.SEC||SEC; RPSC=d.P.RPSC||RPSC; MINE=d.P.MINE||null;
       if(S.bb.phase==='setup'){S.bb=newBb();SEC=randSecret()}
       restoredAt=Date.now();
+      expected=(d.P.exp||[]); expectUntil=expected.length?Date.now()+45000:0;
+      if(expectUntil)setTimeout(function(){renderPeople()},45500);
       return true;
     }catch(e){return false}
   }
@@ -846,7 +866,7 @@ div.ravatar{cursor:default}
 
   /* 연결 */
   function setConn(t,ok){var c=$("conn");c.textContent=t;c.classList.toggle("ok",!!ok)}
-  var hostTries=0;
+  var hostTries=0, gotState=false;
   function startAsHost(){
     peer=new Peer(HOST_ID);
     peer.on("open",function(id){isHost=true;myId=id;if(restoreRoom())setConn("이전 방을 복원했어요",true);else setConn("1명 접속 중",true);render();sendPresence()});
@@ -882,7 +902,7 @@ div.ravatar{cursor:default}
       hostConn.on("data",function(m){
         lastAlive=Date.now();
         if(m.t==="pong")return;
-        if(m.t==="state"){S=m.s;if(prevWin===null)prevWin=winnerValue();render()}
+        if(m.t==="state"){S=m.s;gotState=true;if(prevWin===null)prevWin=winnerValue();render()}
         else if(m.t==="alg"){S.alg=m.a;renderGame()}
       });
       hostConn.on("close",function(){setConn("방장과 연결이 끊겼어요. 다시 연결하는 중…")});
@@ -913,12 +933,24 @@ div.ravatar{cursor:default}
   window.addEventListener("blur",function(){setAway(true)});
   document.addEventListener("visibilitychange",function(){setAway(document.hidden||!document.hasFocus())});
   setInterval(function(){var v=document.hidden||!document.hasFocus();if(v!==away)setAway(v)},2000);
+  var fxOn=true; try{fxOn=localStorage.getItem("br-fx")!=="0"}catch(e){}
+  $("fxSwitch").checked=fxOn;
+  $("fxSwitch").onchange=function(){fxOn=this.checked;try{localStorage.setItem("br-fx",fxOn?"1":"0")}catch(e){}};
   var CROWN_SVG='<svg class="crown" viewBox="0 0 24 24" aria-label="방장" role="img"><path d="M11.56 3.27a.5.5 0 0 1 .88 0l2.95 5.6a1 1 0 0 0 1.52.3L21.18 5.5a.5.5 0 0 1 .8.52l-2.83 10.25a1 1 0 0 1-.96.73H5.81a1 1 0 0 1-.96-.73L2.02 6.02a.5.5 0 0 1 .8-.52l4.28 3.67a1 1 0 0 0 1.52-.3z"/><path d="M5 21h14"/></svg>';
   function renderPeople(){
     $("meav").classList.toggle("host",isHost);
     $("medot").className="sdot "+(myStatus!=="자리 비움"?"on":"off");
     $("meav").title=myName()+" · "+myStatus;
     var box=$("people"); box.textContent="";
+    var wait=expecting(), guestLoading=(!isHost&&!gotState&&peer!==null);
+    $("conn").classList.toggle("loading",wait.length>0||guestLoading);
+    function skel(name){
+      var w=document.createElement("div"); w.className="rprof skel"; w.title="연결하는 중…"; w.setAttribute("aria-label","연결하는 중");
+      var av=document.createElement("div"); av.className="ravatar"; av.textContent=name?name.charAt(0):""; w.appendChild(av);
+      var sp=document.createElement("span"); sp.className="spin"; w.appendChild(sp); box.appendChild(w);
+    }
+    if(guestLoading)skel("");
+    wait.forEach(function(e){skel(e.name)});
     Object.keys(S.people||{}).forEach(function(id){
       if(id===myId)return;
       var p=S.people[id], active=!p.away&&p.status!=="자리 비움";
@@ -1338,7 +1370,7 @@ div.ravatar{cursor:default}
   /* 승리 콘페티 */
   var prevWin="";
   function confetti(bx,by){
-    if(window.matchMedia("(prefers-reduced-motion:reduce)").matches)return;
+    if(!fxOn||window.matchMedia("(prefers-reduced-motion:reduce)").matches)return;
     var cs=getComputedStyle(document.documentElement);
     var colors=["--chart-1","--chart-4","--chart-5","--destructive","--foreground"].map(function(v){return cs.getPropertyValue(v).trim()||"#888"});
     var cv=document.createElement("canvas");
