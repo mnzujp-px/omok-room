@@ -309,7 +309,9 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .mc.open{background:var(--muted);cursor:default}
 .mc.n1{color:var(--chart-1)}.mc.n2{color:var(--chart-4)}.mc.n3{color:var(--destructive)}.mc.n4,.mc.n5,.mc.n6,.mc.n7,.mc.n8{color:var(--chart-5)}
 .mc.boom{background:var(--destructive)}
-.mc svg{width:60%;height:60%;fill:none;stroke:var(--destructive);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.mc svg{width:62%;height:62%}
+.mc .pole{fill:none;stroke:var(--foreground);stroke-width:2.2;stroke-linecap:round}
+.mc .cloth{fill:var(--destructive);stroke:var(--destructive);stroke-width:1.5;stroke-linejoin:round}
 .mc .bomb{width:50%;height:50%;border-radius:var(--radius-full);background:var(--foreground)}
 .win__stone.c{display:none}
 .btop-r{margin-left:auto;display:flex;gap:var(--space-8)}
@@ -1475,7 +1477,7 @@ div.ravatar{cursor:default}
     omok:"흑이 먼저 둡니다. 가로, 세로, 대각선으로 같은 색 돌 5개를 먼저 이으면 승리해요. 혼자서는 'AI와 대결'로 할 수 있어요.",
     alg:"내 알을 누른 채 반대 방향으로 끌었다 놓으면 튕겨요. 많이 끌수록 세게 나가요. 상대 알을 모두 판 밖으로 떨어뜨리면 승리하고, 차례는 번갈아 와요.",
     bb:"각자 서로 다른 숫자 3개를 비밀로 정해요. 번갈아 상대 숫자를 맞혀요. 자리와 숫자가 모두 맞으면 S, 숫자만 맞으면 B, 하나도 없으면 아웃이에요. 먼저 3S를 맞히면 승리해요.",
-    mine:"9x9 판에 지뢰 10개가 숨어 있어요. 칸을 열면 나오는 숫자는 주변 8칸의 지뢰 개수예요. 오른쪽 클릭이나 깃발 모드로 깃발을 꽂아요. 모두가 같은 판을 같이 풀고, 첫 클릭은 항상 안전해요.",
+    mine:"9x9 판에 지뢰 10개가 숨어 있어요. 칸을 열면 나오는 숫자는 주변 8칸의 지뢰 개수예요. 오른쪽 클릭(또는 Shift+클릭)으로 깃발을 꽂아요. 모두가 같은 판을 같이 풀고, 첫 클릭은 항상 안전해요.",
     rps:"둘이 동시에 가위, 바위, 보 중 하나를 골라요. 둘 다 고르면 공개돼요. 먼저 3번 이기면 승리해요."
   };
   function curMode(){return solo?"omok":S.mode}
@@ -1790,11 +1792,6 @@ div.ravatar{cursor:default}
     }else{
       var M=S.mine;
       var top=pEl("div","mhead");
-      var tg=pEl("label","mtog"); tg.title="깃발 모드";
-      tg.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4"/><path d="M6 4h11l-2 4 2 4H6"/></svg>';
-      var sw=document.createElement("input"); sw.type="checkbox"; sw.className="switch"; sw.setAttribute("role","switch"); sw.setAttribute("aria-label","깃발 모드"); sw.checked=flagMode;
-      sw.onchange=function(){flagMode=sw.checked;renderGame()};
-      tg.appendChild(sw); top.appendChild(tg);
       var cnt=pEl("div","mcount"); cnt.title="남은 지뢰"; cnt.setAttribute("aria-label","남은 지뢰 "+(10-M.flags)+"개");
       cnt.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>';
       cnt.appendChild(pEl("span","",String(10-M.flags))); top.appendChild(cnt);
@@ -1803,13 +1800,13 @@ div.ravatar{cursor:default}
       for(var i=0;i<81;i++){
         var v=M.v[i], b2=document.createElement("button"); b2.type="button"; b2.dataset.i=i; b2.className="mc";
         if(v>=0&&v<9){b2.classList.add("open");if(v>0){b2.textContent=v;b2.classList.add("n"+v)}}
-        else if(v===-2)b2.innerHTML='<svg viewBox="0 0 24 24" aria-label="깃발"><path d="M6 21V4"/><path d="M6 4h11l-2 4 2 4H6"/></svg>';
+        else if(v===-2)b2.innerHTML='<svg viewBox="0 0 24 24" aria-label="깃발"><path class="pole" d="M7 3v18"/><path class="cloth" d="M7 4h11l-3.5 4.5L18 13H7z"/></svg>';
         else if(v===9||v===10){b2.classList.add("open");if(v===10)b2.classList.add("boom");b2.innerHTML='<span class="bomb"></span>'}
         grid.appendChild(b2);
       }
       grid.addEventListener("click",function(e){
         var b=e.target.closest(".mc"); if(!b)return;
-        send({t:flagMode?"mflag":"mrev",i:+b.dataset.i});
+        send({t:e.shiftKey?"mflag":"mrev",i:+b.dataset.i});
       });
       grid.addEventListener("contextmenu",function(e){
         var b=e.target.closest(".mc"); if(!b)return; e.preventDefault();
