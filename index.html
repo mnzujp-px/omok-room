@@ -304,7 +304,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .pin input{width:120px;height:44px;text-align:center;font-size:20px;font-weight:700;letter-spacing:.2em;border:0;border-radius:var(--radius-full);background:var(--background);color:var(--foreground);box-shadow:inset 0 0 0 1px var(--input)}
 .pin input:focus-visible{outline:2px solid var(--ring)}
 .perr{color:var(--destructive);font-size:13px;text-align:center;min-height:18px}
-#mgrid{display:grid;grid-template-columns:repeat(9,1fr);gap:2px;width:100%;aspect-ratio:1}
+#mgrid{display:grid;grid-template-columns:repeat(9,1fr);gap:2px;width:calc(100% - 48px);margin:0 auto;aspect-ratio:1}
 .mc{border:0;padding:0;min-width:0;min-height:0;background:var(--background);color:var(--foreground);font:inherit;font-weight:700;font-size:15px;border-radius:var(--radius-md);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .mc.open{background:var(--muted);cursor:default}
 .mc.n1{color:var(--chart-1)}.mc.n2{color:var(--chart-4)}.mc.n3{color:var(--destructive)}.mc.n4,.mc.n5,.mc.n6,.mc.n7,.mc.n8{color:var(--chart-5)}
@@ -372,6 +372,10 @@ div.ravatar{cursor:default}
 .sidewrap .side__label{padding:var(--space-24) var(--space-12) var(--space-8);font-size:13px;color:var(--muted-foreground)}
 .side__more{padding:var(--space-8) var(--space-12);font-size:13px;color:var(--muted-foreground)}
 .stsel2{border:0;background:transparent;font:inherit;font-size:13px;letter-spacing:inherit;color:var(--muted-foreground);cursor:pointer;text-align:right;max-width:110px}
+.mhead{display:flex;align-items:center;justify-content:center;gap:var(--space-24);height:36px;flex:none}
+.mtog{display:flex;align-items:center;gap:var(--space-8);cursor:pointer;color:var(--muted-foreground)}
+.mtog svg,.mcount svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mcount{display:flex;align-items:center;gap:var(--space-6,6px);font-weight:700;color:var(--foreground);font-variant-numeric:tabular-nums;min-width:48px}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -1698,7 +1702,7 @@ div.ravatar{cursor:default}
     var M=S.mine;
     if(M.state==="won")return "클리어! 모두 함께 해냈어요.";
     if(M.state==="lost")return "지뢰를 밟았어요. 새로 시작을 눌러 다시 도전하세요.";
-    return "남은 지뢰 "+(10-M.flags)+"개";
+    return "";
   }
   function pEl(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
   function rpsLabel(c){return c==="r"?"바위":(c==="p"?"보":"가위")}
@@ -1785,9 +1789,16 @@ div.ravatar{cursor:default}
       el.appendChild(pad);
     }else{
       var M=S.mine;
-      var top=pEl("div","prow"), fb=pEl("button","pbtn",flagMode?"깃발 모드: 켜짐":"깃발 모드: 꺼짐"); fb.type="button"; fb.style.height="36px"; fb.style.minWidth="0"; fb.setAttribute("aria-pressed",String(flagMode));
-      fb.onclick=function(){flagMode=!flagMode;renderGame()};
-      top.appendChild(pEl("div","pn-sub","남은 지뢰 "+(10-M.flags))); top.appendChild(fb); el.appendChild(top);
+      var top=pEl("div","mhead");
+      var tg=pEl("label","mtog"); tg.title="깃발 모드";
+      tg.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4"/><path d="M6 4h11l-2 4 2 4H6"/></svg>';
+      var sw=document.createElement("input"); sw.type="checkbox"; sw.className="switch"; sw.setAttribute("role","switch"); sw.setAttribute("aria-label","깃발 모드"); sw.checked=flagMode;
+      sw.onchange=function(){flagMode=sw.checked;renderGame()};
+      tg.appendChild(sw); top.appendChild(tg);
+      var cnt=pEl("div","mcount"); cnt.title="남은 지뢰"; cnt.setAttribute("aria-label","남은 지뢰 "+(10-M.flags)+"개");
+      cnt.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>';
+      cnt.appendChild(pEl("span","",String(10-M.flags))); top.appendChild(cnt);
+      el.appendChild(top);
       var grid=pEl("div",""); grid.id="mgrid";
       for(var i=0;i<81;i++){
         var v=M.v[i], b2=document.createElement("button"); b2.type="button"; b2.dataset.i=i; b2.className="mc";
