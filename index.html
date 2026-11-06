@@ -415,6 +415,12 @@ div.ravatar{cursor:default}
 .rprof.skel .spin{position:absolute;right:0;bottom:0;width:14px;height:14px;background:var(--muted)}
 #conn.loading::before{width:12px;height:12px;background:transparent;border:2px solid color-mix(in srgb,var(--muted-foreground) 30%,transparent);border-top-color:var(--muted-foreground);box-sizing:border-box;animation:rspin .8s linear infinite}
 @media (prefers-reduced-motion:reduce){.spin,#conn.loading::before{animation:none}}
+.sidewrap .side>*{flex:none}
+.sidewrap .side{scrollbar-width:thin}
+.rail{overflow-y:auto;scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.rail>*{flex:none}
+.rail>.rail__spacer{flex:1 1 0;min-height:0}
 [hidden]{display:none!important}
 </style>
 </head>
