@@ -446,6 +446,11 @@ div.ravatar{cursor:default}
   .btop-r .btn::after{content:attr(data-tip);position:absolute;top:calc(100% + 6px);right:0;z-index:30;padding:var(--space-4) var(--space-12);border-radius:var(--radius-lg);background:var(--primary);color:var(--primary-foreground);font-size:12px;line-height:20px;font-weight:500;white-space:nowrap;box-shadow:0 10px 15px -3px rgba(0,0,0,0.25);display:none;pointer-events:none}
   .btop-r .btn:hover::after,.btop-r .btn:focus-visible::after{display:block}
 }
+.tipbtn{position:relative}
+.tipbtn::after{content:attr(data-tip);position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);z-index:60;padding:var(--space-4) var(--space-12);border-radius:var(--radius-lg);background:var(--primary);color:var(--primary-foreground);font-size:12px;line-height:20px;font-weight:500;white-space:nowrap;box-shadow:0 10px 15px -3px rgba(0,0,0,0.25);display:none;pointer-events:none}
+.tipbtn:hover::after,.tipbtn:focus-visible::after{display:block}
+.pmenu{overflow:visible}
+.rname{flex:none}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -514,6 +519,7 @@ div.ravatar{cursor:default}
     <div class="chatwrap">
       <form class="row" id="nickbar" hidden>
         <input class="input" type="text" id="nick" maxlength="12" placeholder="사용할 이름" aria-label="사용할 이름" autocomplete="off">
+        <button class="btn btn--ghost iconbtn tipbtn rname" type="button" aria-label="랜덤 이름 만들기" data-tip="랜덤"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/></svg></button>
         <button class="btn btn--outline" type="submit">저장</button>
       </form>
       <div id="log" aria-live="polite"></div>
@@ -540,7 +546,7 @@ div.ravatar{cursor:default}
       <div class="bcol">
         <div class="btop">
           <span class="selwrap"><select class="gsel2" id="gsel" aria-label="게임 선택"><option value="omok">오목</option><option value="alg">알까기</option><option value="bb">숫자 야구</option><option value="mine">지뢰찾기</option><option value="rps">가위바위보</option></select><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
-          <button class="btn btn--ghost iconbtn" id="dice" type="button" aria-label="랜덤으로 게임 고르기" title="주사위로 랜덤 게임 고르기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/></svg></button>
+          <button class="btn btn--ghost iconbtn tipbtn" id="dice" type="button" aria-label="랜덤으로 게임 고르기" data-tip="랜덤"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/></svg></button>
           <span class="guidewrap">
             <button class="btn btn--ghost iconbtn" id="guide" type="button" aria-label="게임 규칙" aria-describedby="guidetip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path stroke-width="1.6" d="M10.4 10.2a1.7 1.7 0 1 1 2.4 1.55c-.5.28-.8.6-.8 1.1"/><circle cx="12" cy="15.2" r="0.5" fill="currentColor" stroke-width="0.8"/></svg></button>
             <span class="guidetip" id="guidetip" role="tooltip"></span>
@@ -564,6 +570,7 @@ div.ravatar{cursor:default}
 <div id="pmenu" class="pmenu" popover>
   <form class="pm__row" id="nickform">
     <input class="input pm__input" type="text" id="nick2" maxlength="12" placeholder="이름" aria-label="이름" autocomplete="off">
+    <button class="btn btn--ghost iconbtn tipbtn rname" type="button" aria-label="랜덤 이름 만들기" data-tip="랜덤"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/></svg></button>
     <button class="btn btn--outline btn--xs" type="submit">저장</button>
   </form>
   <label class="pm__row pm__label" for="status"><span>상태</span><select id="status" class="stsel2" aria-label="내 상태"><option>대화 가능</option><option>업무 중</option><option>회의 중</option><option>자리 비움</option></select></label>
@@ -994,6 +1001,16 @@ div.ravatar{cursor:default}
       box.appendChild(w);
     });
   }
+  /* 랜덤 닉네임 */
+  var ADJ=["졸린","배고픈","용감한","느긋한","수줍은","반짝이는","엉뚱한","든든한","명랑한","조용한","씩씩한","다정한"];
+  var NOUN=["고양이","펭귄","판다","여우","수달","토끼","거북이","라쿤","햄스터","오리","다람쥐","부엉이"];
+  function randName(){return ADJ[Math.floor(Math.random()*ADJ.length)]+NOUN[Math.floor(Math.random()*NOUN.length)]}
+  document.querySelectorAll(".rname").forEach(function(b){
+    b.onclick=function(){
+      var inp=b.parentNode.querySelector("input[type=text]");
+      inp.value=randName(); inp.focus();
+    };
+  });
   /* 이름 */
   function showNick(){$("me").textContent=nick||"이름 정하기";$("nickbar").hidden=!!nick;$("mename").textContent=nick||"이름 없음";$("meinit").textContent=(nick||"나").charAt(0)}
   function myName(){return nick||"익명"}
