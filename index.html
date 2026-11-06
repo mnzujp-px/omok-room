@@ -286,6 +286,32 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .gsel button{border:0;background:transparent;color:var(--muted-foreground);height:28px;padding:0 var(--space-12);border-radius:var(--radius-full);font:inherit;font-size:13px;letter-spacing:inherit;cursor:pointer}
 .gsel button[aria-pressed="true"]{background:var(--primary);color:var(--primary-foreground)}
 #alg{display:block;width:100%;aspect-ratio:1;border-radius:var(--radius-xl);touch-action:none;cursor:grab}
+.gsel2{height:32px;padding:0 var(--space-12);border:0;border-radius:var(--radius-full);background:var(--muted);color:var(--foreground);font:inherit;font-size:13px;letter-spacing:inherit;cursor:pointer}
+#gpanel{width:100%;aspect-ratio:1;overflow:auto;background:var(--accent);border-radius:var(--radius-xl);padding:var(--space-16);display:flex;flex-direction:column;gap:var(--space-12)}
+.pn-head{font-weight:600;text-align:center}
+.pn-sub{color:var(--muted-foreground);font-size:13px;text-align:center}
+.pcards{display:flex;gap:var(--space-12)}
+.pcard{flex:1;min-width:0;background:var(--background);border-radius:var(--radius-xl);padding:var(--space-16);text-align:center;display:flex;flex-direction:column;gap:var(--space-8);align-items:center}
+.pcard .big{font-size:24px;font-weight:700;line-height:32px}
+.prow{display:flex;gap:var(--space-8);justify-content:center;flex-wrap:wrap}
+.pbtn{min-width:88px;height:48px;padding:0 var(--space-16);border:0;border-radius:var(--radius-full);background:var(--background);color:var(--foreground);font:inherit;font-weight:600;letter-spacing:inherit;cursor:pointer;box-shadow:inset 0 0 0 1px var(--input)}
+.pbtn:hover{background:var(--muted)}
+.pbtn[aria-pressed="true"]{background:var(--primary);color:var(--primary-foreground)}
+.bbrow{display:flex;align-items:center;gap:var(--space-12);padding:var(--space-8) var(--space-12);background:var(--background);border-radius:var(--radius-lg)}
+.bbrow .num{font-weight:700;letter-spacing:.15em;font-variant-numeric:tabular-nums}
+.bblist{display:flex;flex-direction:column;gap:var(--space-4);flex:1;min-height:0;overflow-y:auto}
+.pin{display:flex;gap:var(--space-8);justify-content:center}
+.pin input{width:120px;height:44px;text-align:center;font-size:20px;font-weight:700;letter-spacing:.2em;border:0;border-radius:var(--radius-full);background:var(--background);color:var(--foreground);box-shadow:inset 0 0 0 1px var(--input)}
+.pin input:focus-visible{outline:2px solid var(--ring)}
+.perr{color:var(--destructive);font-size:13px;text-align:center;min-height:18px}
+#mgrid{display:grid;grid-template-columns:repeat(9,1fr);gap:2px;width:100%;aspect-ratio:1}
+.mc{border:0;padding:0;min-width:0;min-height:0;background:var(--background);color:var(--foreground);font:inherit;font-weight:700;font-size:15px;border-radius:var(--radius-md);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mc.open{background:var(--muted);cursor:default}
+.mc.n1{color:var(--chart-1)}.mc.n2{color:var(--chart-4)}.mc.n3{color:var(--destructive)}.mc.n4,.mc.n5,.mc.n6,.mc.n7,.mc.n8{color:var(--chart-5)}
+.mc.boom{background:var(--destructive)}
+.mc svg{width:60%;height:60%;fill:none;stroke:var(--destructive);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.mc .bomb{width:50%;height:50%;border-radius:var(--radius-full);background:var(--foreground)}
+.win__stone.c{display:none}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -357,13 +383,14 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     <div id="boardwrap">
       <div class="bcol">
         <div class="btop">
-          <div class="gsel" role="group" aria-label="게임 선택"><button type="button" data-g="omok" aria-pressed="true">오목</button><button type="button" data-g="alg" aria-pressed="false">알까기</button></div>
+          <select class="gsel2" id="gsel" aria-label="게임 선택"><option value="omok">오목</option><option value="alg">알까기</option><option value="bb">숫자 야구</option><option value="mine">지뢰찾기</option><option value="rps">가위바위보</option></select>
           <span class="text-muted" id="gamestatus"></span>
           <button class="btn btn--outline btn--xs" id="solo" type="button" style="margin-left:auto">AI와 대결</button>
           <button class="btn btn--outline btn--xs" id="reset" type="button">새로 시작</button>
         </div>
         <div id="board"></div>
         <canvas id="alg" width="1200" height="1200" hidden aria-label="알까기 판"></canvas>
+        <div id="gpanel" hidden></div>
       </div>
     </div>
   </aside>
@@ -433,7 +460,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
   var HOST_ID="plusxrm-"+room;
 
   /* 방장이 가진 상태. 손님은 받아서 그리기만 한다 */
-  var S={chat:[],game:blank(),count:1,people:{},mode:"omok",alg:newAlg()};
+  var S={chat:[],game:blank(),count:1,people:{},mode:"omok",alg:newAlg(),rps:newRps(),bb:newBb(),mine:newMine()};
   var peer=null, isHost=false, conns=[], hostConn=null, myId="";
 
   function blank(){return {cells:Array(N*N+1).join("."),turn:"b",black:null,white:null,winner:"",last:-1,line:""}}
@@ -487,7 +514,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       var seatedM=(g.black&&g.black.id===from)||(g.white&&g.white.id===from);
       if(S.alg.moving)return;
       if((g.black||g.white)&&!seatedM)return;
-      S.mode=m.mode==="alg"?"alg":"omok";
+      S.mode=["omok","alg","bb","mine","rps"].indexOf(m.mode)>=0?m.mode:"omok";
     }else if(m.t==="flick"){
       var sd=g.black&&g.black.id===from?"b":(g.white&&g.white.id===from?"w":""), al=S.alg;
       var ix=+m.i, fx=+m.vx, fy=+m.vy;
@@ -496,11 +523,92 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       var mag=Math.sqrt(fx*fx+fy*fy); if(!(mag>0))return;
       if(mag>22){fx*=22/mag;fy*=22/mag}
       startSim(ix,fx,fy,sd); return;
+    }else if(m.t==="rps"){
+      var sr=sideOf(from),R=S.rps;
+      if(S.mode!=="rps"||!sr||!g.black||!g.white||R.winner||R.shown||["r","p","s"].indexOf(m.c)<0)return;
+      RPSC[sr]=m.c;R.picked[sr]=true;
+      if(R.picked.b&&R.picked.w){
+        var cb=RPSC.b,cw=RPSC.w,res="d";
+        if(cb!==cw)res=((cb==="r"&&cw==="s")||(cb==="s"&&cw==="p")||(cb==="p"&&cw==="r"))?"b":"w";
+        R.shown={b:cb,w:cw};R.result=res;R.round++;
+        if(res!=="d"){R.score[res]++;if(R.score[res]>=3)R.winner=res}
+      }
+    }else if(m.t==="rpsnext"){
+      var R2=S.rps;
+      if(S.mode!=="rps"||!sideOf(from)||!R2.shown||R2.winner)return;
+      RPSC={b:null,w:null};R2.picked={b:false,w:false};R2.shown=null;R2.result="";
+    }else if(m.t==="bbset"){
+      var sb=sideOf(from),B=S.bb;
+      if(S.mode!=="bb"||!sb||!g.black||!g.white||B.phase!=="setup"||B.ready[sb]||!validNum(m.n))return;
+      BBS[sb]=m.n;B.ready[sb]=true;
+      if(B.ready.b&&B.ready.w){B.phase="play";B.turn="b"}
+    }else if(m.t==="bbguess"){
+      var sg=sideOf(from),B2=S.bb;
+      if(S.mode!=="bb"||!sg||B2.phase!=="play"||B2.turn!==sg||!validNum(m.n))return;
+      var sec=BBS[sg==="b"?"w":"b"],st=0,bl=0;
+      for(var q2=0;q2<3;q2++){if(m.n.charAt(q2)===sec.charAt(q2))st++;else if(sec.indexOf(m.n.charAt(q2))>=0)bl++}
+      B2.log.push({s:sg,n:m.n,st:st,bl:bl});if(B2.log.length>80)B2.log.shift();
+      if(st===3){B2.winner=sg;B2.phase="done";B2.reveal={b:BBS.b,w:BBS.w}}else B2.turn=sg==="b"?"w":"b";
+    }else if(m.t==="mrev"){mineReveal(+m.i)
+    }else if(m.t==="mflag"){mineFlag(+m.i)
     }else if(m.t==="reset"){
-      if(S.mode==="alg"){clearInterval(simTimer);S.alg=newAlg()}
+      if(S.mode==="rps"){S.rps=newRps();RPSC={b:null,w:null}}
+      else if(S.mode==="bb"){S.bb=newBb();BBS={b:null,w:null}}
+      else if(S.mode==="mine"){S.mine=newMine();MINE=null}
+      else if(S.mode==="alg"){clearInterval(simTimer);S.alg=newAlg()}
       else{var b=g.black,w=g.white; S.game=blank(); S.game.black=b; S.game.white=w}
     }
     broadcast();
+  }
+  /* 가위바위보·숫자 야구·지뢰찾기: 숨겨야 하는 값(선택, 비밀 숫자, 지뢰 위치)은 방장만 가진다 */
+  function newRps(){return {picked:{b:false,w:false},shown:null,result:"",score:{b:0,w:0},round:0,winner:""}}
+  function newBb(){return {phase:"setup",ready:{b:false,w:false},turn:"b",log:[],winner:"",reveal:null}}
+  function newMine(){var v=[];for(var i=0;i<81;i++)v.push(-1);return {v:v,state:"play",flags:0,started:false}}
+  var RPSC={b:null,w:null}, BBS={b:null,w:null}, MINE=null;
+  function sideOf(id){var g=S.game;return g.black&&g.black.id===id?"b":(g.white&&g.white.id===id?"w":"")}
+  function validNum(n){return typeof n==="string"&&/^\d{3}$/.test(n)&&n[0]!==n[1]&&n[0]!==n[2]&&n[1]!==n[2]}
+  function mnb(c){
+    var r=Math.floor(c/9),k=c%9,out=[];
+    for(var dr=-1;dr<=1;dr++)for(var dc=-1;dc<=1;dc++){
+      if(!dr&&!dc)continue; var rr=r+dr,cc=k+dc;
+      if(rr>=0&&rr<9&&cc>=0&&cc<9)out.push(rr*9+cc);
+    }
+    return out;
+  }
+  function mineReveal(i){
+    var M=S.mine;
+    if(S.mode!=="mine"||M.state!=="play"||!(i>=0&&i<81)||M.v[i]!==-1)return;
+    if(!M.started){
+      MINE=[];for(var q=0;q<81;q++)MINE.push(false);
+      var cnt=0,ar=Math.floor(i/9),ac=i%9;
+      while(cnt<10){
+        var r=Math.floor(Math.random()*81),rr=Math.floor(r/9),cc=r%9;
+        if(MINE[r]||(Math.abs(rr-ar)<=1&&Math.abs(cc-ac)<=1))continue;
+        MINE[r]=true;cnt++;
+      }
+      M.started=true;
+    }
+    if(MINE[i]){
+      M.state="lost";
+      for(var j=0;j<81;j++)if(MINE[j]&&M.v[j]!==-2)M.v[j]=9;
+      M.v[i]=10;return;
+    }
+    var stack=[i];
+    while(stack.length){
+      var c=stack.pop(); if(M.v[c]>=0)continue;
+      if(M.v[c]===-2)M.flags--;
+      var nb=mnb(c),n=0;
+      nb.forEach(function(x){if(MINE[x])n++});
+      M.v[c]=n;
+      if(n===0)nb.forEach(function(x){if(M.v[x]<0&&!MINE[x])stack.push(x)});
+    }
+    var opened=0;for(var k=0;k<81;k++)if(M.v[k]>=0&&M.v[k]<9)opened++;
+    if(opened===71){M.state="won";for(var z=0;z<81;z++)if(MINE[z])M.v[z]=-2;M.flags=10}
+  }
+  function mineFlag(i){
+    var M=S.mine;
+    if(S.mode!=="mine"||M.state!=="play"||!(i>=0&&i<81))return;
+    if(M.v[i]===-1){M.v[i]=-2;M.flags++}else if(M.v[i]===-2){M.v[i]=-1;M.flags--}
   }
   /* 알까기: 물리 계산은 방장만 하고 알 위치를 모두에게 보낸다 */
   var AR=22, AW=600, VX=[], VY=[], simTimer=null, simFlicker="b", simTick=0;
@@ -607,7 +715,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       myId=id; hostConn=peer.connect(HOST_ID,{reliable:true});
       hostConn.on("open",function(){setConn("연결됨",true);sendPresence()});
       hostConn.on("data",function(m){
-        if(m.t==="state"){S=m.s;if(prevWin===null)prevWin=(S.mode==="alg"?S.alg.winner:S.game.winner);render()}
+        if(m.t==="state"){S=m.s;if(prevWin===null)prevWin=winnerValue();render()}
         else if(m.t==="alg"){S.alg=m.a;renderGame()}
       });
       hostConn.on("close",function(){setConn("방장이 나갔습니다. 이 링크를 다시 열면 새 방이 열립니다.")});
@@ -1046,10 +1154,10 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 
   /* 승리 모달 */
   function showWin(g){
-    var side=g.winner, w=side==="b"?g.black:g.white;
+    var side=g.winner, w=side==="b"?g.black:(side==="w"?g.white:null);
     $("winstone").className="win__stone "+side;
-    $("wintitle").textContent=(side==="b"?"흑돌":"백돌")+" WIN!!";
-    $("winname").textContent=w&&w.name?w.name+" 님 승리":"";
+    $("wintitle").textContent=side==="c"?"클리어!!":(side==="b"?"흑돌":"백돌")+" WIN!!";
+    $("winname").textContent=side==="c"?"모두 함께 해냈어요.":(w&&w.name?w.name+" 님 승리":"");
     if(!$("windlg").open)$("windlg").showModal();
   }
   $("winclose").onclick=function(){$("windlg").close()};
@@ -1252,11 +1360,28 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     if(g.white&&g.white.id===myId)return "w";
     return "";
   }
+  function curMode(){return solo?"omok":S.mode}
+  function modeTW(g){
+    var m=curMode();
+    if(m==="alg")return {turn:S.alg.turn,win:S.alg.winner};
+    if(m==="bb")return {turn:S.bb.phase==="play"?S.bb.turn:"",win:S.bb.winner};
+    if(m==="rps")return {turn:"",win:S.rps.winner};
+    if(m==="mine")return {turn:"",win:""};
+    return {turn:g.turn,win:g.winner};
+  }
+  function winnerValue(){
+    var m=curMode();
+    if(m==="alg")return S.alg.winner;
+    if(m==="bb")return S.bb.winner;
+    if(m==="rps")return S.rps.winner;
+    if(m==="mine")return S.mine.state==="won"?"c":"";
+    return cur().winner;
+  }
   function renderSeats(){
     var g=cur(), el=$("seats"); el.textContent="";
     [["b","흑",g.black],["w","백",g.white]].forEach(function(sd){
       var key=sd[0], p=sd[2];
-      var algOn=!solo&&S.mode==="alg", gturn=algOn?S.alg.turn:g.turn, gwin=algOn?S.alg.winner:g.winner;
+      var mtw=modeTW(g), gturn=mtw.turn, gwin=mtw.win;
       var turn=!gwin&&gturn===key&&g.black&&g.white;
       function chipEl(){var c=document.createElement("span");c.className="chip "+key;return c}
       if(p){
@@ -1277,10 +1402,11 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
   }
   function renderGame(){
     var g=cur();
-    var algOn=!solo&&S.mode==="alg";
+    var mode=curMode(), algOn=mode==="alg", panelOn=(mode==="bb"||mode==="rps"||mode==="mine");
     if(!(algOn&&S.alg.moving))renderSeats();
-    $("board").hidden=algOn; $("alg").hidden=!algOn; $("solo").hidden=algOn;
-    document.querySelectorAll(".gsel button").forEach(function(b){b.setAttribute("aria-pressed",String((b.dataset.g==="alg")===algOn))});
+    $("board").hidden=algOn||panelOn; $("alg").hidden=!algOn; $("gpanel").hidden=!panelOn; $("solo").hidden=mode!=="omok";
+    if($("gsel").value!==mode)$("gsel").value=mode;
+    if(panelOn){$("gamestatus").textContent=panelStatus(mode);renderPanel(mode);winCheck(g);return}
     if(algOn){
       var sa=mySide(), A=S.alg, stt="";
       if(A.winner){var wn=A.winner==="b"?S.game.black:S.game.white;stt=(A.winner==="b"?"흑":"백")+(wn?" "+wn.name:"")+" 승리. 새로 시작을 눌러 다시 하세요."}
@@ -1310,11 +1436,11 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     $("gamestatus").textContent=st;
     winCheck(g);
   }
-  var lastAlgOn=false;
+  var lastMode="omok";
   function winCheck(g){
-    var algOn=!solo&&S.mode==="alg";
-    var wv=algOn?S.alg.winner:g.winner, gw=algOn?{winner:S.alg.winner,black:S.game.black,white:S.game.white}:g;
-    if(lastAlgOn!==algOn){lastAlgOn=algOn;if(prevWin!==null)prevWin=wv}
+    var mode=curMode(), wv=winnerValue();
+    var gw=(mode==="omok")?g:{winner:wv,black:S.game.black,white:S.game.white};
+    if(lastMode!==mode){lastMode=mode;if(prevWin!==null)prevWin=wv}
     if(prevWin!==null){if(!prevWin&&wv){showWin(gw);if(!(solo&&wv==="w"))confetti()}prevWin=wv}
   }
   /* 알까기 그리기와 조작: 내 알을 누른 채 반대로 끌었다 놓으면 튕긴다 */
@@ -1388,17 +1514,133 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     cv.addEventListener("pointerup",function(e){end(e,true)});
     cv.addEventListener("pointercancel",function(e){end(e,false)});
   })();
-  document.querySelectorAll(".gsel button").forEach(function(b){
-    b.onclick=function(){
-      var gname=b.dataset.g;
-      if(solo){
-        if(gname!=="alg")return;
-        solo=null; prevWin=(S.mode==="alg"?S.alg.winner:S.game.winner); $("solo").textContent="AI와 대결";
-      }
-      send({t:"mode",mode:gname}); renderGame();
-    };
-  });
+  $("gsel").onchange=function(){
+    var gname=this.value;
+    if(solo){
+      if(gname==="omok")return;
+      solo=null; prevWin=winnerValue(); $("solo").textContent="AI와 대결";
+    }
+    send({t:"mode",mode:gname}); renderGame();
+  };
   setInterval(function(){if(!$("alg").hidden&&!S.alg.moving&&!drag)drawAlg()},1000);
+  /* 숫자 야구 · 지뢰찾기 · 가위바위보 화면 */
+  var myRps="", myBb="", flagMode=false, lastSig="";
+  function sName(side){var p=side==="b"?S.game.black:S.game.white;return (side==="b"?"흑":"백")+(p?" "+p.name:"")}
+  function panelStatus(mode){
+    var me=mySide(), both=S.game.black&&S.game.white;
+    if(mode==="rps"){
+      var R=S.rps;
+      if(R.winner)return sName(R.winner)+" 최종 승리. 새로 시작을 눌러 다시 하세요.";
+      if(!both)return "두 명이 앉으면 시작합니다. 먼저 3번 이기면 승리합니다.";
+      if(R.shown)return R.result==="d"?"비겼어요. 다음 판을 시작하세요.":sName(R.result)+" 승리!";
+      if(!me)return "구경 중입니다.";
+      return R.picked[me]?"상대를 기다리는 중입니다.":"가위, 바위, 보 중 하나를 고르세요.";
+    }
+    if(mode==="bb"){
+      var B=S.bb;
+      if(B.phase==="done")return sName(B.winner)+" 승리. 새로 시작을 눌러 다시 하세요.";
+      if(!both)return "두 명이 앉으면 시작합니다.";
+      if(B.phase==="setup"){
+        if(!me)return "구경 중입니다.";
+        return B.ready[me]?"상대가 숫자를 정하는 중입니다.":"비밀 숫자 3개를 정하세요.";
+      }
+      if(!me)return "구경 중입니다.";
+      return B.turn===me?"내 차례입니다. 상대 숫자를 맞혀 보세요.":"상대 차례입니다.";
+    }
+    var M=S.mine;
+    if(M.state==="won")return "클리어! 모두 함께 해냈어요.";
+    if(M.state==="lost")return "지뢰를 밟았어요. 새로 시작을 눌러 다시 도전하세요.";
+    return "남은 지뢰 "+(10-M.flags)+"개 · 같이 눌러서 풀어요.";
+  }
+  function pEl(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+  function rpsLabel(c){return c==="r"?"바위":(c==="p"?"보":"가위")}
+  function numRow(box,ph,btn,onGo){
+    var wrap=pEl("div","pin"), inp=document.createElement("input");
+    inp.type="text";inp.inputMode="numeric";inp.maxLength=3;inp.placeholder=ph;inp.setAttribute("aria-label",ph);inp.autocomplete="off";
+    var go=pEl("button","btn",btn); go.type="button";
+    var err=pEl("div","perr","");
+    function submit(){
+      var v=inp.value.trim();
+      if(!/^\d{3}$/.test(v)||v[0]===v[1]||v[0]===v[2]||v[1]===v[2]){err.textContent="서로 다른 숫자 3개를 입력하세요. (예: 748)";return}
+      err.textContent="";onGo(v);inp.value="";
+    }
+    go.onclick=submit; inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();submit()}});
+    wrap.appendChild(inp);wrap.appendChild(go);box.appendChild(wrap);box.appendChild(err);
+  }
+  function renderPanel(mode){
+    var me=mySide(), both=S.game.black&&S.game.white;
+    var sig=JSON.stringify([mode,S[mode],me,!!both,myRps,myBb,flagMode,S.game.black&&S.game.black.name,S.game.white&&S.game.white.name]);
+    if(sig===lastSig)return; lastSig=sig;
+    var el=$("gpanel"); el.textContent="";
+    if(mode==="rps"){
+      var R=S.rps; if(!me||!R.picked[me])myRps="";
+      el.appendChild(pEl("div","pn-head",sName("b")+"  "+R.score.b+" : "+R.score.w+"  "+sName("w")));
+      el.appendChild(pEl("div","pn-sub",R.round+"판 진행 · 먼저 3번 이기면 승리"));
+      var cards=pEl("div","pcards");
+      ["b","w"].forEach(function(sd){
+        var c=pEl("div","pcard"), chip=pEl("span","chip "+sd); c.appendChild(chip);
+        c.appendChild(pEl("div","",sName(sd)));
+        c.appendChild(pEl("div","big",R.shown?rpsLabel(R.shown[sd]):(R.picked[sd]?"선택 완료":"고르는 중…")));
+        cards.appendChild(c);
+      });
+      el.appendChild(cards);
+      if(me&&both&&!R.shown&&!R.winner){
+        var row=pEl("div","prow");
+        [["s","가위"],["r","바위"],["p","보"]].forEach(function(o){
+          var b=pEl("button","pbtn",o[1]); b.type="button"; b.setAttribute("aria-pressed",String(myRps===o[0]));
+          b.onclick=function(){myRps=o[0];send({t:"rps",c:o[0]});renderGame()};
+          row.appendChild(b);
+        });
+        el.appendChild(row);
+      }
+      if(R.shown&&!R.winner&&me){
+        var nr=pEl("div","prow"), nb=pEl("button","btn","다음 판"); nb.type="button"; nb.onclick=function(){send({t:"rpsnext"})};
+        nr.appendChild(nb); el.appendChild(nr);
+      }
+    }else if(mode==="bb"){
+      var B=S.bb;
+      el.appendChild(pEl("div","pn-head","숫자 야구"));
+      el.appendChild(pEl("div","pn-sub","서로 다른 숫자 3개를 맞혀요. 자리와 숫자가 맞으면 S, 숫자만 맞으면 B"));
+      if(B.phase==="setup"){
+        if(!me||!B.ready[me])myBb="";
+        if(me&&both&&!B.ready[me])numRow(el,"비밀 숫자","정하기",function(v){myBb=v;send({t:"bbset",n:v});renderGame()});
+        else if(me&&B.ready[me])el.appendChild(pEl("div","pn-sub","내 비밀 숫자: "+(myBb||"정했어요")));
+      }else{
+        if(me&&myBb)el.appendChild(pEl("div","pn-sub","내 비밀 숫자: "+myBb));
+        var list=pEl("div","bblist");
+        if(!B.log.length)list.appendChild(pEl("div","pn-sub","아직 기록이 없어요."));
+        B.log.forEach(function(r){
+          var row=pEl("div","bbrow"); row.appendChild(pEl("span","chip "+r.s)); row.appendChild(pEl("span","num",r.n));
+          row.appendChild(pEl("span","",r.st===0&&r.bl===0?"아웃":(r.st+"S "+r.bl+"B"))); list.appendChild(row);
+        });
+        el.appendChild(list);
+        if(B.phase==="done"&&B.reveal)el.appendChild(pEl("div","pn-sub","공개: 흑 "+B.reveal.b+" · 백 "+B.reveal.w));
+        if(B.phase==="play"&&me&&B.turn===me)numRow(el,"맞히기","맞히기",function(v){send({t:"bbguess",n:v})});
+      }
+    }else{
+      var M=S.mine;
+      var top=pEl("div","prow"), fb=pEl("button","pbtn",flagMode?"깃발 모드: 켜짐":"깃발 모드: 꺼짐"); fb.type="button"; fb.style.height="36px"; fb.style.minWidth="0"; fb.setAttribute("aria-pressed",String(flagMode));
+      fb.onclick=function(){flagMode=!flagMode;renderGame()};
+      top.appendChild(pEl("div","pn-sub","남은 지뢰 "+(10-M.flags)+" · 오른쪽 클릭은 깃발")); top.appendChild(fb); el.appendChild(top);
+      var grid=pEl("div",""); grid.id="mgrid";
+      for(var i=0;i<81;i++){
+        var v=M.v[i], b2=document.createElement("button"); b2.type="button"; b2.dataset.i=i; b2.className="mc";
+        if(v>=0&&v<9){b2.classList.add("open");if(v>0){b2.textContent=v;b2.classList.add("n"+v)}}
+        else if(v===-2)b2.innerHTML='<svg viewBox="0 0 24 24" aria-label="깃발"><path d="M6 21V4"/><path d="M6 4h11l-2 4 2 4H6"/></svg>';
+        else if(v===9||v===10){b2.classList.add("open");if(v===10)b2.classList.add("boom");b2.innerHTML='<span class="bomb"></span>'}
+        grid.appendChild(b2);
+      }
+      grid.addEventListener("click",function(e){
+        var b=e.target.closest(".mc"); if(!b)return;
+        send({t:flagMode?"mflag":"mrev",i:+b.dataset.i});
+      });
+      grid.addEventListener("contextmenu",function(e){
+        var b=e.target.closest(".mc"); if(!b)return; e.preventDefault();
+        send({t:"mflag",i:+b.dataset.i});
+      });
+      el.appendChild(grid);
+    }
+  }
   function render(){
     if(isHost||(hostConn&&hostConn.open))setConn(S.count+"명 접속 중",true);
     renderChat(); renderGame(); renderPeople();
