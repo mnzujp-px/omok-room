@@ -1671,7 +1671,7 @@ div.ravatar{cursor:default}
     var mode=curMode(), wv=winnerValue();
     var gw=(mode==="omok")?g:{winner:wv,black:S.game.black,white:S.game.white};
     if(lastMode!==mode){lastMode=mode;if(prevWin!==null)prevWin=wv}
-    if(prevWin!==null){if(!prevWin&&wv){showWin(gw);if(!(solo&&wv==="w"))confetti()}prevWin=wv}
+    if(prevWin!==null){if(!prevWin&&wv&&fxOn){showWin(gw);if(!(solo&&wv==="w"))confetti()}prevWin=wv}
   }
   /* 알까기 그리기와 조작: 내 알을 누른 채 반대로 끌었다 놓으면 튕긴다 */
   var drag=null;
