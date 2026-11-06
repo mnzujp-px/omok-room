@@ -286,7 +286,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .gsel button{border:0;background:transparent;color:var(--muted-foreground);height:28px;padding:0 var(--space-12);border-radius:var(--radius-full);font:inherit;font-size:13px;letter-spacing:inherit;cursor:pointer}
 .gsel button[aria-pressed="true"]{background:var(--primary);color:var(--primary-foreground)}
 #alg{display:block;width:100%;aspect-ratio:1;border-radius:var(--radius-xl);touch-action:none;cursor:grab}
-.gsel2{height:32px;padding:0 var(--space-12);border:0;border-radius:var(--radius-full);background:var(--muted);color:var(--foreground);font:inherit;font-size:13px;letter-spacing:inherit;cursor:pointer}
+.gsel2{appearance:none;-webkit-appearance:none;height:32px;padding:0 var(--space-32,32px) 0 var(--space-12);border:0;border-radius:var(--radius-full);background:var(--muted);color:var(--foreground);font:inherit;font-size:13px;letter-spacing:inherit;cursor:pointer}
 #gpanel{width:100%;aspect-ratio:1;overflow:auto;background:var(--accent);border-radius:var(--radius-xl);padding:var(--space-16);display:flex;flex-direction:column;gap:var(--space-12)}
 .pn-head{font-weight:600;text-align:center}
 .pn-sub{color:var(--muted-foreground);font-size:13px;text-align:center}
@@ -319,6 +319,9 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 @keyframes dspin{from{transform:rotate(0)}to{transform:rotate(540deg)}}
 #toast{position:fixed;left:50%;bottom:104px;transform:translateX(-50%);z-index:80;max-width:calc(100vw - 32px);padding:var(--space-12) var(--space-20);border-radius:var(--radius-full);background:var(--primary);color:var(--primary-foreground);font-size:14px;line-height:22px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.25);text-align:center}
 @media (prefers-reduced-motion:reduce){#dice.spin svg{animation:none}}
+.selwrap{position:relative;display:inline-flex;align-items:center}
+.selwrap svg{position:absolute;right:var(--space-12);top:50%;width:12px;height:12px;margin-top:-6px;pointer-events:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;color:var(--muted-foreground)}
+.selwrap .gsel2:focus,.selwrap .gsel2:focus-visible{outline:none;box-shadow:none}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -390,7 +393,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     <div id="boardwrap">
       <div class="bcol">
         <div class="btop">
-          <select class="gsel2" id="gsel" aria-label="게임 선택"><option value="omok">오목</option><option value="alg">알까기</option><option value="bb">숫자 야구</option><option value="mine">지뢰찾기</option><option value="rps">가위바위보</option></select>
+          <span class="selwrap"><select class="gsel2" id="gsel" aria-label="게임 선택"><option value="omok">오목</option><option value="alg">알까기</option><option value="bb">숫자 야구</option><option value="mine">지뢰찾기</option><option value="rps">가위바위보</option></select><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
           <button class="btn btn--ghost iconbtn" id="dice" type="button" aria-label="랜덤으로 게임 고르기" title="주사위로 랜덤 게임 고르기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/></svg></button>
           <div class="btop-r">
             <button class="btn btn--outline btn--xs" id="solo" type="button">AI와 대결</button>
