@@ -355,8 +355,10 @@ div.ravatar{cursor:default}
 .sdot{position:absolute;right:1px;bottom:1px;width:12px;height:12px;border-radius:var(--radius-full);box-sizing:border-box;border:2px solid var(--muted)}
 .sdot.on{background:var(--chart-4)}
 .sdot.off{background:var(--muted);border-color:var(--muted-foreground)}
-.rcrown{position:absolute;top:-3px;left:-3px;display:flex}
-.rcrown .crown,.rp .crown{width:15px;height:15px}
+.avcrown{display:none}
+.ravatar.host .avcrown{display:flex}
+.ravatar.host #meinit{display:none}
+.ravatar .crown{width:16px;height:16px;stroke:var(--chart-5);stroke-width:2}
 .side__head{padding:0 var(--space-4) var(--space-8) var(--space-8)}
 .side__head .side__title{padding:0;font-size:18px}
 .side__tools{display:flex;align-items:center;gap:var(--space-2)}
@@ -386,9 +388,9 @@ div.ravatar{cursor:default}
     <div class="rail__spacer"></div>
     <div id="people" aria-label="접속자 상태" aria-live="polite"></div>
     <div class="rp me">
-      <button class="ravatar" id="meav" type="button" popovertarget="pmenu" aria-label="프로필 메뉴"><span id="meinit">나</span></button>
+      <button class="ravatar" id="meav" type="button" popovertarget="pmenu" aria-label="프로필 메뉴"><span id="meinit">나</span><span class="avcrown" aria-hidden="true"><svg class="crown" viewBox="0 0 24 24"><path d="M11.56 3.27a.5.5 0 0 1 .88 0l2.95 5.6a1 1 0 0 0 1.52.3L21.18 5.5a.5.5 0 0 1 .8.52l-2.83 10.25a1 1 0 0 1-.96.73H5.81a1 1 0 0 1-.96-.73L2.02 6.02a.5.5 0 0 1 .8-.52l4.28 3.67a1 1 0 0 0 1.52-.3z"/><path d="M5 21h14"/></svg></span></button>
       <span class="sdot on" id="medot"></span>
-      <span class="rcrown" id="mecrown" hidden><svg class="crown" viewBox="0 0 24 24" aria-label="방장" role="img"><path d="M11.56 3.27a.5.5 0 0 1 .88 0l2.95 5.6a1 1 0 0 0 1.52.3L21.18 5.5a.5.5 0 0 1 .8.52l-2.83 10.25a1 1 0 0 1-.96.73H5.81a1 1 0 0 1-.96-.73L2.02 6.02a.5.5 0 0 1 .8-.52l4.28 3.67a1 1 0 0 0 1.52-.3z"/><path d="M5 21h14"/></svg></span>
+
       <span class="sr-only" id="mename">이름 없음</span>
     </div>
   </nav>
@@ -830,7 +832,7 @@ div.ravatar{cursor:default}
   setInterval(function(){var v=document.hidden||!document.hasFocus();if(v!==away)setAway(v)},2000);
   var CROWN_SVG='<svg class="crown" viewBox="0 0 24 24" aria-label="방장" role="img"><path d="M11.56 3.27a.5.5 0 0 1 .88 0l2.95 5.6a1 1 0 0 0 1.52.3L21.18 5.5a.5.5 0 0 1 .8.52l-2.83 10.25a1 1 0 0 1-.96.73H5.81a1 1 0 0 1-.96-.73L2.02 6.02a.5.5 0 0 1 .8-.52l4.28 3.67a1 1 0 0 0 1.52-.3z"/><path d="M5 21h14"/></svg>';
   function renderPeople(){
-    $("mecrown").hidden=!isHost;
+    $("meav").classList.toggle("host",isHost);
     $("medot").className="sdot "+(myStatus!=="자리 비움"?"on":"off");
     $("meav").title=myName()+" · "+myStatus;
     var box=$("people"); box.textContent="";
@@ -842,7 +844,7 @@ div.ravatar{cursor:default}
       w.setAttribute("role","img"); w.setAttribute("aria-label",p.name+" "+label);
       var av=document.createElement("div"); av.className="ravatar"; av.textContent=(p.name||"?").charAt(0); w.appendChild(av);
       var dt=document.createElement("span"); dt.className="sdot "+(active?"on":"off"); w.appendChild(dt);
-      if(id===HOST_ID){var cw=document.createElement("span"); cw.className="rcrown"; cw.innerHTML=CROWN_SVG; w.appendChild(cw)}
+      if(id===HOST_ID){av.classList.add("host"); av.textContent=""; var cw=document.createElement("span"); cw.className="avcrown"; cw.innerHTML=CROWN_SVG; av.appendChild(cw)}
       box.appendChild(w);
     });
   }
