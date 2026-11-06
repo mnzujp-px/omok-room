@@ -312,6 +312,13 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .mc svg{width:60%;height:60%;fill:none;stroke:var(--destructive);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .mc .bomb{width:50%;height:50%;border-radius:var(--radius-full);background:var(--foreground)}
 .win__stone.c{display:none}
+.btop-r{margin-left:auto;display:flex;gap:var(--space-8)}
+.btop{flex-wrap:nowrap;min-height:32px}
+.gstat{min-height:22px;text-align:center;font-size:13px;line-height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#dice.spin svg{animation:dspin .5s ease-out}
+@keyframes dspin{from{transform:rotate(0)}to{transform:rotate(540deg)}}
+#toast{position:fixed;left:50%;bottom:104px;transform:translateX(-50%);z-index:80;max-width:calc(100vw - 32px);padding:var(--space-12) var(--space-20);border-radius:var(--radius-full);background:var(--primary);color:var(--primary-foreground);font-size:14px;line-height:22px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.25);text-align:center}
+@media (prefers-reduced-motion:reduce){#dice.spin svg{animation:none}}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -384,17 +391,22 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       <div class="bcol">
         <div class="btop">
           <select class="gsel2" id="gsel" aria-label="게임 선택"><option value="omok">오목</option><option value="alg">알까기</option><option value="bb">숫자 야구</option><option value="mine">지뢰찾기</option><option value="rps">가위바위보</option></select>
-          <span class="text-muted" id="gamestatus"></span>
-          <button class="btn btn--outline btn--xs" id="solo" type="button" style="margin-left:auto">AI와 대결</button>
-          <button class="btn btn--outline btn--xs" id="reset" type="button">새로 시작</button>
+          <button class="btn btn--ghost iconbtn" id="dice" type="button" aria-label="랜덤으로 게임 고르기" title="주사위로 랜덤 게임 고르기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/></svg></button>
+          <div class="btop-r">
+            <button class="btn btn--outline btn--xs" id="solo" type="button">AI와 대결</button>
+            <button class="btn btn--outline btn--xs" id="reset" type="button">새로 시작</button>
+          </div>
         </div>
         <div id="board"></div>
         <canvas id="alg" width="1200" height="1200" hidden aria-label="알까기 판"></canvas>
         <div id="gpanel" hidden></div>
+        <div class="gstat text-muted" id="gamestatus" aria-live="polite"></div>
       </div>
     </div>
   </aside>
 </div>
+
+<div id="toast" role="status" aria-live="polite" hidden></div>
 
 <div id="pmenu" class="pmenu" popover>
   <form class="pm__row" id="nickform">
@@ -1216,7 +1228,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     b.type="button"; b.className="c"+(r===0?" top":"")+(r===N-1?" bot":"")+(c===0?" lft":"")+(c===N-1?" rgt":"");
     b.setAttribute("aria-label",(r+1)+"행 "+(c+1)+"열"); b.dataset.i=i; cellEls.push(b); board.appendChild(b);
   }
-  board.addEventListener("click",function(e){var el=e.target.closest(".c");if(el){if(solo)soloMove(+el.dataset.i);else send({t:"move",i:+el.dataset.i})}});
+  board.addEventListener("click",function(e){var el=e.target.closest(".c");if(el){if(solo)soloMove(+el.dataset.i);else{if(!needBoth())return;send({t:"move",i:+el.dataset.i})}}});
   function syncThemeUI(){$("themeSwitch").checked=document.documentElement.getAttribute("data-theme")==="dark"}
   function applyTheme(dark){
     var d=document.documentElement;
@@ -1360,6 +1372,23 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     if(g.white&&g.white.id===myId)return "w";
     return "";
   }
+  var toastTimer=null;
+  function toast(msg){
+    var t=$("toast"); t.textContent=msg; t.hidden=false;
+    clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.hidden=true},3000);
+  }
+  function needBoth(){
+    if(solo)return true;
+    if(!mySide()){toast("먼저 흑이나 백 자리에 앉아 주세요.");return false}
+    if(!(S.game.black&&S.game.white)){toast("상대가 앉으면 시작할 수 있어요.");return false}
+    return true;
+  }
+  function canSwitch(){
+    if(solo)return true;
+    if(S.alg.moving){toast("알이 움직이는 중에는 게임을 바꿀 수 없어요.");return false}
+    if((S.game.black||S.game.white)&&!mySide()){toast("게임은 앉아 있는 사람만 바꿀 수 있어요.");return false}
+    return true;
+  }
   function curMode(){return solo?"omok":S.mode}
   function modeTW(g){
     var m=curMode();
@@ -1410,7 +1439,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     if(algOn){
       var sa=mySide(), A=S.alg, stt="";
       if(A.winner){var wn=A.winner==="b"?S.game.black:S.game.white;stt=(A.winner==="b"?"흑":"백")+(wn?" "+wn.name:"")+" 승리. 새로 시작을 눌러 다시 하세요."}
-      else if(!S.game.black||!S.game.white)stt="두 명이 앉으면 시작합니다. 흑이 먼저 튕깁니다.";
+      else if(!S.game.black||!S.game.white)stt="";
       else if(A.moving)stt="알이 움직이는 중…";
       else if(!sa)stt="구경 중입니다.";
       else stt=A.turn===sa?"내 차례입니다. 내 알을 끌었다 놓아 튕기세요.":"상대 차례입니다.";
@@ -1430,7 +1459,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     }
     var st="";
     if(g.winner){var w=g.winner==="b"?g.black:g.white;st=(g.winner==="b"?"흑":"백")+(w?" "+w.name:"")+" 승리. 새 판을 눌러 다시 하세요."}
-    else if(!g.black||!g.white)st="두 명이 앉으면 시작합니다. 흑이 먼저 둡니다.";
+    else if(!g.black||!g.white)st="";
     else if(!side)st="구경 중입니다.";
     else st=g.turn===side?"내 차례입니다.":"상대 차례입니다.";
     $("gamestatus").textContent=st;
@@ -1486,7 +1515,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     var cv=$("alg");
     function pos(e){var r=cv.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*AW,y:(e.clientY-r.top)/r.height*AW}}
     cv.addEventListener("pointerdown",function(e){
-      if(!canFlick())return;
+      if(!canFlick()){if(!solo&&S.mode==="alg"&&!S.alg.winner&&!S.alg.moving&&(!mySide()||!(S.game.black&&S.game.white)))needBoth();return}
       var pt=pos(e), side=mySide(), p=S.alg.p, best=-1, bd=1e9;
       for(var i=(side==="b"?0:7);i<(side==="b"?7:14);i++){
         if(p[2*i]<-500)continue;
@@ -1514,13 +1543,25 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     cv.addEventListener("pointerup",function(e){end(e,true)});
     cv.addEventListener("pointercancel",function(e){end(e,false)});
   })();
-  $("gsel").onchange=function(){
-    var gname=this.value;
+  var GNAMES={omok:"오목",alg:"알까기",bb:"숫자 야구",mine:"지뢰찾기",rps:"가위바위보"};
+  function switchTo(gname){
     if(solo){
       if(gname==="omok")return;
       solo=null; prevWin=winnerValue(); $("solo").textContent="AI와 대결";
     }
     send({t:"mode",mode:gname}); renderGame();
+  }
+  $("gsel").onchange=function(){
+    var gname=this.value;
+    if(!solo&&!canSwitch()){this.value=curMode();return}
+    switchTo(gname);
+  };
+  $("dice").onclick=function(){
+    var d=$("dice"); d.classList.remove("spin"); void d.offsetWidth; d.classList.add("spin");
+    if(!solo&&!canSwitch())return;
+    var cur=curMode(), pool=Object.keys(GNAMES).filter(function(m){return m!==cur&&!(solo&&m==="omok")});
+    var pick=pool[Math.floor(Math.random()*pool.length)];
+    switchTo(pick); toast("주사위 결과: "+GNAMES[pick]);
   };
   setInterval(function(){if(!$("alg").hidden&&!S.alg.moving&&!drag)drawAlg()},1000);
   /* 숫자 야구 · 지뢰찾기 · 가위바위보 화면 */
@@ -1531,7 +1572,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     if(mode==="rps"){
       var R=S.rps;
       if(R.winner)return sName(R.winner)+" 최종 승리. 새로 시작을 눌러 다시 하세요.";
-      if(!both)return "두 명이 앉으면 시작합니다. 먼저 3번 이기면 승리합니다.";
+      if(!both)return "";
       if(R.shown)return R.result==="d"?"비겼어요. 다음 판을 시작하세요.":sName(R.result)+" 승리!";
       if(!me)return "구경 중입니다.";
       return R.picked[me]?"상대를 기다리는 중입니다.":"가위, 바위, 보 중 하나를 고르세요.";
@@ -1539,7 +1580,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     if(mode==="bb"){
       var B=S.bb;
       if(B.phase==="done")return sName(B.winner)+" 승리. 새로 시작을 눌러 다시 하세요.";
-      if(!both)return "두 명이 앉으면 시작합니다.";
+      if(!both)return "";
       if(B.phase==="setup"){
         if(!me)return "구경 중입니다.";
         return B.ready[me]?"상대가 숫자를 정하는 중입니다.":"비밀 숫자 3개를 정하세요.";
@@ -1562,7 +1603,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
     function submit(){
       var v=inp.value.trim();
       if(!/^\d{3}$/.test(v)||v[0]===v[1]||v[0]===v[2]||v[1]===v[2]){err.textContent="서로 다른 숫자 3개를 입력하세요. (예: 748)";return}
-      err.textContent="";onGo(v);inp.value="";
+      err.textContent="";if(onGo(v)===false)return;inp.value="";
     }
     go.onclick=submit; inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();submit()}});
     wrap.appendChild(inp);wrap.appendChild(go);box.appendChild(wrap);box.appendChild(err);
@@ -1584,11 +1625,11 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
         cards.appendChild(c);
       });
       el.appendChild(cards);
-      if(me&&both&&!R.shown&&!R.winner){
+      if(!R.shown&&!R.winner){
         var row=pEl("div","prow");
         [["s","가위"],["r","바위"],["p","보"]].forEach(function(o){
           var b=pEl("button","pbtn",o[1]); b.type="button"; b.setAttribute("aria-pressed",String(myRps===o[0]));
-          b.onclick=function(){myRps=o[0];send({t:"rps",c:o[0]});renderGame()};
+          b.onclick=function(){if(!needBoth())return;myRps=o[0];send({t:"rps",c:o[0]});renderGame()};
           row.appendChild(b);
         });
         el.appendChild(row);
@@ -1603,7 +1644,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
       el.appendChild(pEl("div","pn-sub","서로 다른 숫자 3개를 맞혀요. 자리와 숫자가 맞으면 S, 숫자만 맞으면 B"));
       if(B.phase==="setup"){
         if(!me||!B.ready[me])myBb="";
-        if(me&&both&&!B.ready[me])numRow(el,"비밀 숫자","정하기",function(v){myBb=v;send({t:"bbset",n:v});renderGame()});
+        if(!(me&&B.ready[me]))numRow(el,"비밀 숫자","정하기",function(v){if(!needBoth())return false;myBb=v;send({t:"bbset",n:v});renderGame()});
         else if(me&&B.ready[me])el.appendChild(pEl("div","pn-sub","내 비밀 숫자: "+(myBb||"정했어요")));
       }else{
         if(me&&myBb)el.appendChild(pEl("div","pn-sub","내 비밀 숫자: "+myBb));
