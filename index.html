@@ -392,6 +392,22 @@ div.ravatar{cursor:default}
 .bbsend{width:32px;height:32px;flex:none;border:0;border-radius:var(--radius-full);background:var(--send);color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .bbsend:disabled{opacity:.35;cursor:default}
 .bbsend svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#gpanel.rps{justify-content:center;align-items:center;gap:var(--space-24)}
+.rscore{display:flex;align-items:center;gap:var(--space-16);padding:var(--space-8) var(--space-24);background:var(--background);border-radius:var(--radius-xl);box-shadow:inset 0 0 0 1px var(--input)}
+.rhalf{display:flex;align-items:center;gap:var(--space-8)}
+.rnum{font-size:24px;line-height:32px;font-weight:700;font-variant-numeric:tabular-nums;min-width:20px;text-align:center}
+.rsep{color:var(--muted-foreground);font-weight:700}
+.rarena{display:flex;gap:var(--space-16);justify-content:center}
+.rcard{width:clamp(96px,26cqh,150px);aspect-ratio:1;border-radius:var(--radius-2xl);background:var(--background);display:flex;align-items:center;justify-content:center;color:var(--foreground);box-shadow:inset 0 0 0 1px var(--input)}
+.rcard svg{width:46%;height:46%;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.rcard.win{box-shadow:inset 0 0 0 2px var(--chart-4)}
+.rcard.lose{opacity:.45}
+.rpick{display:flex;gap:var(--space-12);justify-content:center;min-height:56px;align-items:center}
+.rbtn,.rnext{width:56px;height:56px;border:0;border-radius:var(--radius-full);background:var(--background);color:var(--foreground);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:inset 0 0 0 1px var(--input)}
+.rbtn:hover{background:var(--muted)}
+.rbtn[aria-pressed="true"]{background:var(--primary);color:var(--primary-foreground);box-shadow:none}
+.rnext{background:var(--primary);color:var(--primary-foreground);box-shadow:none}
+.rbtn svg,.rnext svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -1717,6 +1733,7 @@ div.ravatar{cursor:default}
   };
   setInterval(function(){if(!$("alg").hidden&&!S.alg.moving&&!drag)drawAlg()},1000);
   /* 숫자 야구 · 지뢰찾기 · 가위바위보 화면 */
+  var RICON={"s": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"6\" cy=\"6\" r=\"3\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><path d=\"M8.1 8.1L20 20M8.1 15.9L20 4\"/></svg>", "r": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4.5 15.5l2-6.5 5-3.5 5.5 2 2.5 5-2 5.5H8z\"/><path d=\"M11.5 5.5l-.5 6-4.5 4\"/></svg>", "p": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 3h7l4 4v14H7z\"/><path d=\"M14 3v4h4\"/><path d=\"M10 12h5M10 16h5\"/></svg>", "wait": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"6\" cy=\"12\" r=\"1.3\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\" fill=\"currentColor\"/><circle cx=\"18\" cy=\"12\" r=\"1.3\" fill=\"currentColor\"/></svg>", "done": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12.5l4.5 4.5L19 7.5\"/></svg>", "next": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 12a8 8 0 1 1-2.6-5.9\"/><path d=\"M20 4v5h-5\"/></svg>"};
   var myRps="", flagMode=false, lastSig="";
   document.addEventListener("keydown",function(e){
     if(curMode()!=="bb"||e.metaKey||e.ctrlKey||e.altKey)return;
@@ -1728,11 +1745,11 @@ div.ravatar{cursor:default}
     var me=mySide(), both=S.game.black&&S.game.white;
     if(mode==="rps"){
       var R=S.rps;
-      if(R.winner)return sName(R.winner)+" 최종 승리. 새로 시작을 눌러 다시 하세요.";
+      if(R.winner)return sName(R.winner)+" 최종 승리!";
       if(!both)return "";
-      if(R.shown)return R.result==="d"?"비겼어요. 다음 판을 시작하세요.":sName(R.result)+" 승리!";
+      if(R.shown)return R.result==="d"?"비겼어요":sName(R.result)+" 승리!";
       if(!me)return "구경 중입니다.";
-      return R.picked[me]?"상대를 기다리는 중입니다.":"선택하세요.";
+      return R.picked[me]?"기다리는 중…":"선택하세요.";
     }
     if(mode==="bb"){
       var B=S.bb;
@@ -1766,32 +1783,40 @@ div.ravatar{cursor:default}
     var sig=JSON.stringify([mode,S[mode],me,!!both,myRps,flagMode,S.game.black&&S.game.black.name,S.game.white&&S.game.white.name]);
     if(sig===lastSig)return; lastSig=sig;
     var ai=document.activeElement, keepFocus=!!(ai&&ai.id==="bbinput"), keepVal=keepFocus?ai.value:"";
-    var el=$("gpanel"); el.textContent=""; el.className=(mode==="bb"?"bb":"");
+    var el=$("gpanel"); el.textContent=""; el.className=(mode==="bb"?"bb":(mode==="rps"?"rps":""));
     if(mode==="rps"){
       var R=S.rps; if(!me||!R.picked[me])myRps="";
-      el.appendChild(pEl("div","pn-head",sName("b")+"  "+R.score.b+" : "+R.score.w+"  "+sName("w")));
-      el.appendChild(pEl("div","pn-sub",R.round?R.round+"판 진행":"첫 판"));
-      var cards=pEl("div","pcards");
-      ["b","w"].forEach(function(sd){
-        var c=pEl("div","pcard"), chip=pEl("span","chip "+sd); c.appendChild(chip);
-        c.appendChild(pEl("div","",sName(sd)));
-        c.appendChild(pEl("div","big",R.shown?rpsLabel(R.shown[sd]):(R.picked[sd]?"선택 완료":"고르는 중…")));
-        cards.appendChild(c);
+      var sc=pEl("div","rscore");
+      [["b",R.score.b],["w",R.score.w]].forEach(function(o,i){
+        if(i===1)sc.appendChild(pEl("span","rsep",":"));
+        var half=pEl("span","rhalf"); half.title=sName(o[0]);
+        if(i===0){half.appendChild(pEl("span","chip "+o[0]));half.appendChild(pEl("span","rnum",String(o[1])))}
+        else{half.appendChild(pEl("span","rnum",String(o[1])));half.appendChild(pEl("span","chip "+o[0]))}
+        sc.appendChild(half);
       });
-      el.appendChild(cards);
+      el.appendChild(sc);
+      var arena=pEl("div","rarena");
+      ["b","w"].forEach(function(sd){
+        var c=pEl("div","rcard"+(R.shown&&R.result===sd?" win":"")+(R.shown&&R.result!=="d"&&R.result!==sd?" lose":"")); c.title=sName(sd);
+        c.innerHTML=R.shown?RICON[R.shown[sd]]:(R.picked[sd]?RICON.done:RICON.wait);
+        c.setAttribute("aria-label",sName(sd)+" "+(R.shown?rpsLabel(R.shown[sd]):(R.picked[sd]?"선택 완료":"고르는 중")));
+        arena.appendChild(c);
+      });
+      el.appendChild(arena);
+      var row=pEl("div","rpick");
       if(!R.shown&&!R.winner){
-        var row=pEl("div","prow");
         [["s","가위"],["r","바위"],["p","보"]].forEach(function(o){
-          var b=pEl("button","pbtn",o[1]); b.type="button"; b.setAttribute("aria-pressed",String(myRps===o[0]));
+          var b=pEl("button","rbtn"); b.type="button"; b.title=o[1]; b.setAttribute("aria-label",o[1]); b.setAttribute("aria-pressed",String(myRps===o[0]));
+          b.innerHTML=RICON[o[0]];
           b.onclick=function(){if(!needBoth())return;myRps=o[0];send({t:"rps",c:o[0]});renderGame()};
           row.appendChild(b);
         });
-        el.appendChild(row);
+      }else if(R.shown&&!R.winner&&me){
+        var nb=pEl("button","rnext"); nb.type="button"; nb.title="다음 판"; nb.setAttribute("aria-label","다음 판"); nb.innerHTML=RICON.next;
+        nb.onclick=function(){send({t:"rpsnext"})};
+        row.appendChild(nb);
       }
-      if(R.shown&&!R.winner&&me){
-        var nr=pEl("div","prow"), nb=pEl("button","btn","다음 판"); nb.type="button"; nb.onclick=function(){send({t:"rpsnext"})};
-        nr.appendChild(nb); el.appendChild(nr);
-      }
+      el.appendChild(row);
     }else if(mode==="bb"){
       var B=S.bb;
       var canIn=B.phase==="play"&&(!me||!both||B.turn===me);
