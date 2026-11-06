@@ -353,7 +353,7 @@ button.seat:hover{background:var(--accent);color:var(--foreground)}
 .rail__item--on{background:var(--accent);color:var(--foreground)}
 .rail__spacer{flex:1}
 #people{display:flex;flex-direction:column;gap:var(--space-8);align-items:center}
-.rp{position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex:none}
+.rprof{position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex:none}
 .ravatar{width:32px;height:32px;border-radius:var(--radius-full);border:0;padding:0;background:var(--primary);color:var(--primary-foreground);display:flex;align-items:center;justify-content:center;font:inherit;font-weight:600;font-size:13px;letter-spacing:inherit;cursor:pointer}
 div.ravatar{cursor:default}
 .sdot{position:absolute;right:0;bottom:0;width:12px;height:12px;border-radius:var(--radius-full);box-sizing:border-box;border:0}
@@ -400,7 +400,7 @@ div.ravatar{cursor:default}
     <div class="rail__item" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></div>
     <div class="rail__spacer"></div>
     <div id="people" aria-label="접속자 상태" aria-live="polite"></div>
-    <div class="rp me">
+    <div class="rprof me">
       <button class="ravatar" id="meav" type="button" popovertarget="pmenu" aria-label="프로필 메뉴"><span id="meinit">나</span><span class="avcrown" aria-hidden="true"><svg class="crown" viewBox="0 0 24 24"><path d="M11.56 3.27a.5.5 0 0 1 .88 0l2.95 5.6a1 1 0 0 0 1.52.3L21.18 5.5a.5.5 0 0 1 .8.52l-2.83 10.25a1 1 0 0 1-.96.73H5.81a1 1 0 0 1-.96-.73L2.02 6.02a.5.5 0 0 1 .8-.52l4.28 3.67a1 1 0 0 0 1.52-.3z"/><path d="M5 21h14"/></svg></span></button>
       <span class="sdot on" id="medot"></span>
 
@@ -853,7 +853,7 @@ div.ravatar{cursor:default}
       if(id===myId)return;
       var p=S.people[id], active=!p.away&&p.status!=="자리 비움";
       var label=p.away?p.status+" · 다른 창 보는 중":p.status;
-      var w=document.createElement("div"); w.className="rp"; w.title=p.name+" · "+label;
+      var w=document.createElement("div"); w.className="rprof"; w.title=p.name+" · "+label;
       w.setAttribute("role","img"); w.setAttribute("aria-label",p.name+" "+label);
       var av=document.createElement("div"); av.className="ravatar"; av.textContent=(p.name||"?").charAt(0); w.appendChild(av);
       var dt=document.createElement("span"); dt.className="sdot "+(active?"on":"off"); w.appendChild(dt);
