@@ -442,6 +442,9 @@ div.ravatar{cursor:default}
   .btop-r .btn{width:32px;padding:0;display:inline-flex;align-items:center;justify-content:center}
   .btop-r .bt-full{display:none}
   .btop-r .bt-ic{display:block}
+  .btop-r .btn{position:relative}
+  .btop-r .btn::after{content:attr(data-tip);position:absolute;top:calc(100% + 6px);right:0;z-index:30;padding:var(--space-4) var(--space-12);border-radius:var(--radius-lg);background:var(--primary);color:var(--primary-foreground);font-size:12px;line-height:20px;font-weight:500;white-space:nowrap;box-shadow:0 10px 15px -3px rgba(0,0,0,0.25);display:none;pointer-events:none}
+  .btop-r .btn:hover::after,.btop-r .btn:focus-visible::after{display:block}
 }
 [hidden]{display:none!important}
 </style>
@@ -543,8 +546,8 @@ div.ravatar{cursor:default}
             <span class="guidetip" id="guidetip" role="tooltip"></span>
           </span>
           <div class="btop-r">
-            <button class="btn btn--outline btn--xs" id="solo" type="button" title="AI와 대결" aria-label="AI와 대결"><span class="bt-full">AI와 대결</span><svg class="bt-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4"/><circle cx="9.5" cy="13.5" r="1" fill="currentColor"/><circle cx="14.5" cy="13.5" r="1" fill="currentColor"/></svg></button>
-            <button class="btn btn--outline btn--xs" id="reset" type="button" title="새로 시작" aria-label="새로 시작"><span class="bt-full">새로 시작</span><svg class="bt-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button>
+            <button class="btn btn--outline btn--xs" id="solo" type="button" data-tip="AI와 대결" aria-label="AI와 대결"><span class="bt-full">AI와 대결</span><svg class="bt-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4"/><circle cx="9.5" cy="13.5" r="1" fill="currentColor"/><circle cx="14.5" cy="13.5" r="1" fill="currentColor"/></svg></button>
+            <button class="btn btn--outline btn--xs" id="reset" type="button" data-tip="새로 시작" aria-label="새로 시작"><span class="bt-full">새로 시작</span><svg class="bt-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button>
           </div>
         </div>
         <div id="board"></div>
@@ -1617,7 +1620,7 @@ div.ravatar{cursor:default}
     mine:"9x9 판에 지뢰 10개가 숨어 있어요. 칸을 열면 나오는 숫자는 주변 8칸의 지뢰 개수예요. 오른쪽 클릭(또는 Shift+클릭)으로 깃발을 꽂아요. 모두가 같은 판을 같이 풀고, 첫 클릭은 항상 안전해요.",
     rps:"둘이 동시에 가위, 바위, 보 중 하나를 골라요. 둘 다 고르면 공개돼요. 먼저 3번 이기면 승리해요."
   };
-  function soloLabel(t){var f=$("solo").querySelector(".bt-full");if(f)f.textContent=t;$("solo").title=t;$("solo").setAttribute("aria-label",t)}
+  function soloLabel(t){var f=$("solo").querySelector(".bt-full");if(f)f.textContent=t;$("solo").dataset.tip=t;$("solo").setAttribute("aria-label",t)}
   function curMode(){return solo?"omok":S.mode}
   function modeTW(g){
     var m=curMode();
